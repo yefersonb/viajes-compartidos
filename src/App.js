@@ -8,7 +8,6 @@ import {
   orderBy,
   doc,
   getDoc,
-  setDoc,
 } from "firebase/firestore";
 
 import Login from "./components/Login";
@@ -28,24 +27,37 @@ function App() {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUsuario(user);
+
       if (user) {
-        const docRef = doc(db, "usuarios", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setRol(docSnap.data().rol);
+        const localRol = localStorage.getItem("rolSeleccionado");
+
+        if (localRol) {
+          setRol(localRol);
+        } else {
+          const docRef = doc(db, "usuarios", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const rolBD = docSnap.data().rol;
+            if (rolBD) {
+              setRol(rolBD);
+              localStorage.setItem("rolSeleccionado", rolBD);
+            }
+          }
         }
       } else {
         setRol(null);
+        localStorage.removeItem("rolSeleccionado");
       }
+
       setLoading(false);
     });
 
     return () => unsubscribeAuth();
   }, []);
 
-  // Escuchar viajes
+  // Escuchar viajes solo si el rol es "viajero"
   useEffect(() => {
-    if (!usuario || rol !== "viajero") return; // Solo viajeros ven lista de viajes
+    if (!usuario || rol !== "viajero") return;
 
     const q = query(collection(db, "viajes"), orderBy("fecha", "asc"));
     const unsubscribeViajes = onSnapshot(q, (snapshot) => {
@@ -64,6 +76,7 @@ function App() {
       await signOut(auth);
       setUsuario(null);
       setRol(null);
+      localStorage.removeItem("rolSeleccionado");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
       alert("Hubo un problema al cerrar sesión.");

@@ -10,6 +10,7 @@ export default function Logout() {
     try {
       await signOut(auth);
       setUsuario(null);
+      localStorage.removeItem("rolSeleccionado"); // <-- limpiamos rol localStorage
     } catch (error) {
       console.error("Error cerrando sesión:", error);
       alert("No se pudo cerrar sesión");
@@ -18,3 +19,4 @@ export default function Logout() {
 
   return <button onClick={logout}>Cerrar sesión</button>;
 }
+

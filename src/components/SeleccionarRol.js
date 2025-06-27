@@ -10,9 +10,12 @@ function SeleccionarRol({ usuario, setRol }) {
         email: usuario.email,
         rol: rolElegido,
       });
-      setRol(rolElegido); // Actualiza estado en App.js
+
+      localStorage.setItem("rolSeleccionado", rolElegido); // 🧠 lo guardamos localmente
+      setRol(rolElegido); // 🔄 actualizamos el estado
     } catch (error) {
       console.error("Error al guardar el rol:", error);
+      alert("Hubo un problema al guardar tu rol.");
     }
   };
 
