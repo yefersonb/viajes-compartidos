@@ -16,6 +16,7 @@ import PerfilConductor from "./components/PerfilConductor";
 import NuevoVehiculo from "./components/NuevoVehiculo";
 import MisVehiculos from "./components/MisVehiculos";
 import NuevoViaje from "./components/NuevoViaje";
+import BuscadorViajes from "./components/BuscadorViajes";
 
 const modalStyles = {
   overlay: {
@@ -73,6 +74,7 @@ function App() {
   const [rol, setRol] = useState(null);
   const [viajes, setViajes] = useState([]);
   const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
+  const [busqueda, setBusqueda] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -196,6 +198,7 @@ function App() {
 
           {rol === "viajero" && (
             <>
+              <BuscadorViajes onBuscar={setBusqueda} />
               <h2>Viajes Disponibles</h2>
               {viajes.length === 0 ? (
                 <p>No hay viajes publicados.</p>
