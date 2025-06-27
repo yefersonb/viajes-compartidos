@@ -17,13 +17,63 @@ import NuevoVehiculo from "./components/NuevoVehiculo";
 import MisVehiculos from "./components/MisVehiculos";
 import NuevoViaje from "./components/NuevoViaje";
 
+const modalStyles = {
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1100,
+  },
+  content: {
+    backgroundColor: "#fff",
+    padding: "30px 40px",
+    borderRadius: "12px",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
+    maxWidth: "400px",
+    width: "90%",
+    textAlign: "center",
+    position: "relative",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: "12px",
+    right: "12px",
+    backgroundColor: "#e74c3c",
+    border: "none",
+    borderRadius: "50%",
+    color: "white",
+    width: "28px",
+    height: "28px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  changeRoleBtn: {
+    position: "fixed",
+    top: 10,
+    right: 10,
+    backgroundColor: "#f39c12",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    zIndex: 1000,
+  },
+};
+
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rol, setRol] = useState(null);
   const [viajes, setViajes] = useState([]);
+  const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
 
-  // Escuchar login
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUsuario(user);
@@ -55,7 +105,6 @@ function App() {
     return () => unsubscribeAuth();
   }, []);
 
-  // Escuchar viajes solo si el rol es "viajero"
   useEffect(() => {
     if (!usuario || rol !== "viajero") return;
 
@@ -86,7 +135,7 @@ function App() {
   if (loading) return <p>Cargando...</p>;
 
   return (
-    <div style={{ padding: "1rem" }}>
+    <div style={{ padding: "1rem", position: "relative" }}>
       <h1>🚗 Viajes Compartidos</h1>
 
       {!usuario ? (
@@ -94,12 +143,42 @@ function App() {
           <p>Iniciar sesión</p>
           <Login onLogin={setUsuario} />
         </>
-      ) : !rol ? (
-        <SeleccionarRol usuario={usuario} setRol={setRol} />
       ) : (
         <>
-          <p>Hola, {usuario.displayName || usuario.email} ({rol})</p>
+          <p>
+            Hola, {usuario.displayName || usuario.email} ({rol})
+          </p>
           <button onClick={cerrarSesion}>Cerrar sesión</button>
+
+          <button
+            style={modalStyles.changeRoleBtn}
+            onClick={() => setMostrarSelectorRol(true)}
+            title="Cambiar rol"
+          >
+            Cambiar rol
+          </button>
+
+          {mostrarSelectorRol && (
+            <div style={modalStyles.overlay}>
+              <div style={modalStyles.content}>
+                <button
+                  style={modalStyles.closeBtn}
+                  onClick={() => setMostrarSelectorRol(false)}
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+                <SeleccionarRol
+                  usuario={usuario}
+                  setRol={(nuevoRol) => {
+                    setRol(nuevoRol);
+                    localStorage.setItem("rolSeleccionado", nuevoRol);
+                    setMostrarSelectorRol(false);
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           <hr />
 
@@ -124,10 +203,16 @@ function App() {
                 <ul>
                   {viajes.map((v) => (
                     <li key={v.id}>
-                      <strong>{v.origen} → {v.destino}</strong><br />
-                      Fecha: {v.fecha}<br />
-                      Asientos disponibles: {v.asientos}<br />
-                      Contacto: <a
+                      <strong>
+                        {v.origen} → {v.destino}
+                      </strong>
+                      <br />
+                      Fecha: {v.fecha}
+                      <br />
+                      Asientos disponibles: {v.asientos}
+                      <br />
+                      Contacto:{" "}
+                      <a
                         href={`https://wa.me/${v.conductor.whatsapp}`}
                         target="_blank"
                         rel="noopener noreferrer"
