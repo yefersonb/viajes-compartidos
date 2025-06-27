@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { auth, db } from "../firebase";
 import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import AutocompleteInput from "./AutocompleteInput"; // 👈 Importá el input con Google Places
 
 export default function NuevoViaje() {
   const [origen, setOrigen] = useState("");
@@ -63,16 +64,26 @@ export default function NuevoViaje() {
   return (
     <div>
       <h3>Crear Nuevo Viaje</h3>
-      <input placeholder="Origen" value={origen} onChange={e => setOrigen(e.target.value)} />
-      <input placeholder="Destino" value={destino} onChange={e => setDestino(e.target.value)} />
-      <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+      <AutocompleteInput placeholder="Origen" value={origen} onChange={setOrigen} />
+      <AutocompleteInput placeholder="Destino" value={destino} onChange={setDestino} />
+      <input
+        type="date"
+        value={fecha}
+        onChange={(e) => setFecha(e.target.value)}
+        className="border p-2 m-2 w-full"
+      />
       <input
         type="number"
         min={1}
         value={asientos}
-        onChange={e => setAsientos(parseInt(e.target.value))}
+        onChange={(e) => setAsientos(parseInt(e.target.value))}
+        className="border p-2 m-2 w-full"
       />
-      <button onClick={publicarViaje} disabled={formularioIncompleto || loading}>
+      <button
+        onClick={publicarViaje}
+        disabled={formularioIncompleto || loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded"
+      >
         {loading ? "Publicando..." : "Publicar Viaje"}
       </button>
     </div>
