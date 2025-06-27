@@ -17,6 +17,7 @@ import NuevoVehiculo from "./components/NuevoVehiculo";
 import MisVehiculos from "./components/MisVehiculos";
 import NuevoViaje from "./components/NuevoViaje";
 import BuscadorViajes from "./components/BuscadorViajes";
+import MapaRuta from "./components/MapaRuta";
 
 const modalStyles = {
   overlay: {
