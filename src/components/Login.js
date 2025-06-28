@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -6,6 +6,9 @@ import { useUser } from "../contexts/UserContext";
 
 export default function Login() {
   const { usuario, setUsuario } = useUser();
+  const [whatsapp, setWhatsapp] = useState("");
+  const [pidiendoWhatsapp, setPidiendoWhatsapp] = useState(false);
+  const [userTemp, setUserTemp] = useState(null);
 
   const loginConGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -13,27 +16,59 @@ export default function Login() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Guardamos o actualizamos el usuario en Firestore
+      // Buscamos si el usuario ya tiene documento
       const userRef = doc(db, "usuarios", user.uid);
       const snap = await getDoc(userRef);
 
-      if (!snap.exists()) {
-        await setDoc(userRef, {
-          nombre: user.displayName,
-          whatsapp: prompt("Ingresa tu número de WhatsApp (solo números, sin + ni espacios):"),
-        });
+      if (snap.exists() && snap.data().whatsapp) {
+        setUsuario(user);
+      } else {
+        setUserTemp(user);
+        setPidiendoWhatsapp(true);
       }
-
-      setUsuario(user);
     } catch (error) {
       console.error("Error en login:", error);
       alert("Error al iniciar sesión");
     }
   };
 
-  if (usuario) return null; // si ya está logueado, no mostrar nada
+  const guardarWhatsapp = async () => {
+    if (!userTemp) return;
+    if (!whatsapp) {
+      alert("Ingresá tu número de WhatsApp");
+      return;
+    }
+    try {
+      await setDoc(doc(db, "usuarios", userTemp.uid), {
+        nombre: userTemp.displayName,
+        whatsapp: whatsapp,
+        email: userTemp.email,
+      });
+      setUsuario(userTemp);
+      setPidiendoWhatsapp(false);
+    } catch (error) {
+      alert("Error guardando WhatsApp");
+      console.error(error);
+    }
+  };
+
+  if (usuario) return null;
 
   return (
-    <button onClick={loginConGoogle}>Iniciar sesión con Google</button>
+    <div>
+      <button onClick={loginConGoogle}>Iniciar sesión con Google</button>
+      {pidiendoWhatsapp && (
+        <div style={{ marginTop: 20 }}>
+          <h4>Completá tu WhatsApp para continuar:</h4>
+          <input
+            type="text"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            placeholder="Ej: 3756123456"
+          />
+          <button onClick={guardarWhatsapp}>Guardar</button>
+        </div>
+      )}
+    </div>
   );
 }
