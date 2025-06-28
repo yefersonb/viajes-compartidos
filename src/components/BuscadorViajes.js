@@ -10,6 +10,7 @@ export default function BuscadorViajes() {
   const [fechaHora, setFechaHora] = useState("");
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [mostrarMapa, setMostrarMapa] = useState({}); // Estado para controlar la visualización del mapa por viaje
 
   const buscarViajes = async () => {
     if (!origen || !destino || !fechaHora) {
@@ -35,8 +36,9 @@ export default function BuscadorViajes() {
     setLoading(false);
   };
 
-  // Ejemplo de función para reservar
+  // Función para reservar y mostrar el mapa solo luego de reservar
   const reservarViaje = (viajeId) => {
+    setMostrarMapa(prev => ({ ...prev, [viajeId]: true }));
     alert(`Reserva solicitada para el viaje con id: ${viajeId}`);
     // Aquí podrías crear una colección "reservas" en Firestore o abrir un chat, etc.
   };
@@ -97,10 +99,6 @@ export default function BuscadorViajes() {
             >
               {v.conductor.nombre}
             </a>
-            {/* Mapa, distancia y duración */}
-            <div style={{ marginTop: "1rem" }}>
-              <MapaRuta origen={v.origen} destino={v.destino} />
-            </div>
             {/* Botón reservar */}
             <button
               style={{
@@ -116,6 +114,12 @@ export default function BuscadorViajes() {
             >
               Reservar
             </button>
+            {/* Mostrar el mapa solo después de reservar */}
+            {mostrarMapa[v.id] && (
+              <div style={{ marginTop: "1rem" }}>
+                <MapaRuta origen={v.origen} destino={v.destino} />
+              </div>
+            )}
           </li>
         ))}
       </ul>
