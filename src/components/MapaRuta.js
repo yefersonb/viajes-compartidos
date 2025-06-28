@@ -1,18 +1,41 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-function MapaRuta({ origen, destino }) {
+export default function MapaRuta({ origen, destino }) {
   const mapRef = useRef(null);
+  const [distancia, setDistancia] = useState("");
+  const [duracion, setDuracion] = useState("");
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Poné tu API Key aquí
+  const API_KEY = "AIzaSyA5Ff5D5b1iUJQ4E-K9H6F_vMpwJ1p0Fsw";
 
   useEffect(() => {
-    if (!origen || !destino || !window.google) return;
+    if (!origen || !destino) return;
 
-    const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 7,
-      center: { lat: -27.36, lng: -55.9 }, // centro aproximado Misiones
-    });
+    // Carga Google Maps JS API si no está cargada
+    if (!window.google) {
+      const script = document.createElement("script");
+      script.src =
+        `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
+      script.async = true;
+      script.onload = () => setMapLoaded(true);
+      document.body.appendChild(script);
+      return;
+    }
+    setMapLoaded(true);
+  }, [origen, destino, API_KEY]);
+
+  useEffect(() => {
+    if (!mapLoaded || !origen || !destino) return;
 
     const directionsService = new window.google.maps.DirectionsService();
     const directionsRenderer = new window.google.maps.DirectionsRenderer();
+
+    const map = new window.google.maps.Map(mapRef.current, {
+      zoom: 7,
+      center: { lat: -27.3621, lng: -55.9009 }, // Centro aproximado en Misiones
+    });
+
     directionsRenderer.setMap(map);
 
     directionsService.route(
@@ -22,24 +45,33 @@ function MapaRuta({ origen, destino }) {
         travelMode: window.google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
-        if (status === "OK") {
+        if (status === window.google.maps.DirectionsStatus.OK) {
           directionsRenderer.setDirections(result);
-          const route = result.routes[0].legs[0];
-          console.log(`Distancia: ${route.distance.text}`);
-          console.log(`Duración: ${route.duration.text}`);
+
+          // Distancia y duración
+          const leg = result.routes[0].legs[0];
+          setDistancia(leg.distance.text);
+          setDuracion(leg.duration.text);
         } else {
-          console.error("Error en la ruta:", status);
+          setDistancia("No disponible");
+          setDuracion("No disponible");
         }
       }
     );
-  }, [origen, destino]);
+
+    // Limpia el mapa al desmontar
+    return () => {
+      directionsRenderer.setMap(null);
+    };
+  }, [mapLoaded, origen, destino]);
 
   return (
     <div>
-      <h4>Ruta entre {origen} y {destino}</h4>
-      <div ref={mapRef} style={{ height: "400px", width: "100%", marginTop: "10px" }} />
+      <div ref={mapRef} style={{ width: "100%", height: "200px", marginBottom: 8, borderRadius: 8 }} />
+      <div>
+        <b>Distancia:</b> {distancia} <br />
+        <b>Duración estimada:</b> {duracion}
+      </div>
     </div>
   );
 }
-
-export default MapaRuta;

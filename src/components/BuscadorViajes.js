@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import AutocompleteInput from "./AutocompleteInput";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import MapaRuta from "./MapaRuta";
 
 export default function BuscadorViajes() {
   const [origen, setOrigen] = useState("");
@@ -18,7 +19,6 @@ export default function BuscadorViajes() {
     setLoading(true);
 
     try {
-      // Trae todos los viajes y filtra manualmente por origen, destino y fecha/hora
       const snapshot = await getDocs(collection(db, "viajes"));
       const viajesFiltrados = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -35,8 +35,14 @@ export default function BuscadorViajes() {
     setLoading(false);
   };
 
+  // Ejemplo de función para reservar
+  const reservarViaje = (viajeId) => {
+    alert(`Reserva solicitada para el viaje con id: ${viajeId}`);
+    // Aquí podrías crear una colección "reservas" en Firestore o abrir un chat, etc.
+  };
+
   return (
-    <div style={{ padding: "1rem", maxWidth: "500px", margin: "auto" }}>
+    <div style={{ padding: "1rem", maxWidth: "600px", margin: "auto" }}>
       <h2>Buscar Viajes</h2>
       <AutocompleteInput
         placeholder="Origen"
@@ -74,7 +80,7 @@ export default function BuscadorViajes() {
       {viajes.length === 0 && !loading && <p>No hay viajes que coincidan.</p>}
       <ul className="viajes-list">
         {viajes.map((v) => (
-          <li key={v.id}>
+          <li key={v.id} style={{ marginBottom: "2rem", background: "#eef4fb", borderRadius: "10px", padding: "1rem" }}>
             <strong>
               {v.origen} → {v.destino}
             </strong>
@@ -91,6 +97,25 @@ export default function BuscadorViajes() {
             >
               {v.conductor.nombre}
             </a>
+            {/* Mapa, distancia y duración */}
+            <div style={{ marginTop: "1rem" }}>
+              <MapaRuta origen={v.origen} destino={v.destino} />
+            </div>
+            {/* Botón reservar */}
+            <button
+              style={{
+                marginTop: "10px",
+                backgroundColor: "#27ae60",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "5px",
+                cursor: "pointer"
+              }}
+              onClick={() => reservarViaje(v.id)}
+            >
+              Reservar
+            </button>
           </li>
         ))}
       </ul>
