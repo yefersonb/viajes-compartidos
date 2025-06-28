@@ -9,7 +9,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-
+import "./App.css";
 import Login from "./components/Login";
 import SeleccionarRol from "./components/SeleccionarRol";
 import PerfilConductor from "./components/PerfilConductor";
@@ -138,7 +138,7 @@ function App() {
   if (loading) return <p>Cargando...</p>;
 
   return (
-    <div style={{ padding: "1rem", position: "relative" }}>
+    <div className="app-container">
       <h1>🚗 Viajes Compartidos</h1>
 
       {!usuario ? (
@@ -149,11 +149,13 @@ function App() {
       ) : (
         <>
           <p>
-            Hola, {usuario.displayName || usuario.email} ({rol})
+            Hola, {usuario.displayName || usuario.email}{" "}
+            <span className="role-badge">({rol})</span>
           </p>
           <button onClick={cerrarSesion}>Cerrar sesión</button>
 
           <button
+            className="change-role-btn"
             style={modalStyles.changeRoleBtn}
             onClick={() => setMostrarSelectorRol(true)}
             title="Cambiar rol"
@@ -186,7 +188,7 @@ function App() {
           <hr />
 
           {rol === "conductor" && (
-            <>
+            <div className="card">
               <PerfilConductor />
               <hr />
               <MisVehiculos />
@@ -194,7 +196,7 @@ function App() {
               <NuevoVehiculo />
               <hr />
               <NuevoViaje />
-            </>
+            </div>
           )}
 
           {rol === "viajero" && (
@@ -204,7 +206,7 @@ function App() {
               {viajes.length === 0 ? (
                 <p>No hay viajes publicados.</p>
               ) : (
-                <ul>
+                <ul className="viajes-list">
                   {viajes.map((v) => (
                     <li key={v.id}>
                       <strong>
