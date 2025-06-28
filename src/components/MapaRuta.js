@@ -7,7 +7,7 @@ export default function MapaRuta({ origen, destino }) {
   const [error, setError] = useState("");
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // API KEY actualizada
+  // NUEVA API KEY
   const API_KEY = "AIzaSyCJ0WA7v-rvHZIU4VXFnDyBGoo_XTxtYTE";
 
   // Geocoding auxiliar
