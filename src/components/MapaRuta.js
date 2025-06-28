@@ -7,10 +7,10 @@ export default function MapaRuta({ origen, destino }) {
   const [error, setError] = useState("");
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // TU API KEY
-  const API_KEY = "AIzaSyCWrPZ9Y..."; // pon tu key aquí
+  // TU API KEY AQUI
+  const API_KEY = "AIzaSyCWrPZ9Y5tq-IOH3gO8HMUxIeqEKj24T2M";
 
-  // Geocodifica una dirección a lat/lng usando Geocoding API
+  // Geocoding auxiliar
   async function geocode(address) {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;
     const res = await fetch(url);
@@ -23,10 +23,9 @@ export default function MapaRuta({ origen, destino }) {
   }
 
   useEffect(() => {
-    // Carga el mapa básico
     if (!window.google) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry`;
       script.async = true;
       script.onload = () => setMapLoaded(true);
       document.body.appendChild(script);
@@ -40,19 +39,18 @@ export default function MapaRuta({ origen, destino }) {
 
     const calcularRuta = async () => {
       try {
-        // 1. Geocodificar origen y destino
         const [origCoord, destCoord] = await Promise.all([
           geocode(origen),
           geocode(destino)
         ]);
 
-        // 2. Llamar a la Routes API REST
+        // Llamada REST a Routes API
         const url = `https://routes.googleapis.com/directions/v2:computeRoutes?key=${API_KEY}`;
         const body = {
-          "origin": { "location": { "latLng": origCoord } },
-          "destination": { "location": { "latLng": destCoord } },
-          "travelMode": "DRIVE",
-          "routingPreference": "TRAFFIC_AWARE"
+          origin: { location: { latLng: origCoord } },
+          destination: { location: { latLng: destCoord } },
+          travelMode: "DRIVE",
+          routingPreference: "TRAFFIC_AWARE"
         };
 
         const res = await fetch(url, {
@@ -71,28 +69,25 @@ export default function MapaRuta({ origen, destino }) {
           );
           setDuracion(
             leg.duration
-              ? convertirDuracion(leg.duration)
+              ? (parseInt(leg.duration.replace("s", "")) / 60).toFixed(0) + " min"
               : "N/D"
           );
 
-          // Mostrar ruta en el mapa (polilínea)
+          // Mostrar ruta en el mapa (polyline)
           const map = new window.google.maps.Map(mapRef.current, {
             zoom: 7,
             center: origCoord,
           });
 
-          // Decodifica la polilínea (requiere geometry library)
           if (
             data.routes[0].polyline &&
-            data.routes[0].polyline.encodedPolyline &&
-            window.google.maps.geometry
+            data.routes[0].polyline.encodedPolyline
           ) {
-            const routePath =
-              window.google.maps.geometry.encoding.decodePath(
-                data.routes[0].polyline.encodedPolyline
-              );
+            const decodedPath = window.google.maps.geometry.encoding.decodePath(
+              data.routes[0].polyline.encodedPolyline
+            );
             const routeLine = new window.google.maps.Polyline({
-              path: routePath,
+              path: decodedPath,
               geodesic: true,
               strokeColor: "#4285F4",
               strokeOpacity: 1.0,
@@ -100,4 +95,39 @@ export default function MapaRuta({ origen, destino }) {
             });
             routeLine.setMap(map);
 
-            // Ajust
+            // Ajusta el mapa al recorrido
+            const bounds = new window.google.maps.LatLngBounds();
+            decodedPath.forEach((latLng) => bounds.extend(latLng));
+            map.fitBounds(bounds);
+          }
+          setError("");
+        } else {
+          setError("No se encontró una ruta disponible.");
+          setDistancia("");
+          setDuracion("");
+        }
+      } catch (err) {
+        setError("Error calculando la ruta: " + err.message);
+        setDistancia("");
+        setDuracion("");
+      }
+    };
+
+    calcularRuta();
+  }, [mapLoaded, origen, destino, API_KEY]);
+
+  return (
+    <div>
+      <div ref={mapRef} style={{ width: "100%", height: "200px", marginBottom: 8, borderRadius: 8 }} />
+      <div>
+        <b>Distancia:</b> {distancia || "No disponible"}<br />
+        <b>Duración estimada:</b> {duracion || "No disponible"}
+      </div>
+      {error && (
+        <div style={{ color: "red", marginTop: 8 }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
