@@ -12,6 +12,9 @@ export default function BuscadorViajes() {
   const [loading, setLoading] = useState(false);
   const [mostrarMapa, setMostrarMapa] = useState({}); // Estado para controlar la visualización del mapa por viaje
 
+  // Agrega el console.log aquí, dentro del componente pero antes del return
+  console.log("mostrarMapa:", mostrarMapa);
+
   const buscarViajes = async () => {
     if (!origen || !destino || !fechaHora) {
       alert("Por favor completá todos los campos.");
