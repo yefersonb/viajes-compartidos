@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { auth, db } from "../firebase";
 import { collection, addDoc, doc, getDoc } from "firebase/firestore";
-import AutocompleteInput from "./AutocompleteInput"; // 👈 Importá el input con Google Places
+import AutocompleteInput from "./AutocompleteInput";
 
 export default function NuevoViaje() {
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
-  const [fecha, setFecha] = useState("");
+  const [fechaHora, setFechaHora] = useState(""); // datetime-local
   const [asientos, setAsientos] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +36,7 @@ export default function NuevoViaje() {
       await addDoc(collection(db, "viajes"), {
         origen,
         destino,
-        fecha,
+        horario: fechaHora, // campo fecha y hora juntos
         asientos,
         creado: new Date(),
         conductor: {
@@ -49,7 +49,7 @@ export default function NuevoViaje() {
       alert("✅ Viaje publicado!");
       setOrigen("");
       setDestino("");
-      setFecha("");
+      setFechaHora("");
       setAsientos(1);
     } catch (error) {
       console.error("❌ Error al publicar viaje:", error);
@@ -59,7 +59,7 @@ export default function NuevoViaje() {
     setLoading(false);
   };
 
-  const formularioIncompleto = !origen || !destino || !fecha || asientos < 1;
+  const formularioIncompleto = !origen || !destino || !fechaHora || asientos < 1;
 
   return (
     <div>
@@ -67,9 +67,9 @@ export default function NuevoViaje() {
       <AutocompleteInput placeholder="Origen" value={origen} onChange={setOrigen} />
       <AutocompleteInput placeholder="Destino" value={destino} onChange={setDestino} />
       <input
-        type="date"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
+        type="datetime-local"
+        value={fechaHora}
+        onChange={(e) => setFechaHora(e.target.value)}
         className="border p-2 m-2 w-full"
       />
       <input
