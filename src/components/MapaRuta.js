@@ -7,8 +7,8 @@ export default function MapaRuta({ origen, destino }) {
   const [error, setError] = useState("");
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // TU API KEY AQUI
-  const API_KEY = "AIzaSyCWrPZ9Y5tq-IOH3gO8HMUxIeqEKj24T2M";
+  // API KEY actualizada
+  const API_KEY = "AIzaSyCJ0WA7v-rvHZIU4VXFnDyBGoo_XTxtYTE";
 
   // Geocoding auxiliar
   async function geocode(address) {
@@ -23,7 +23,8 @@ export default function MapaRuta({ origen, destino }) {
   }
 
   useEffect(() => {
-    if (!window.google) {
+    // Carga Google Maps JS con geometry si aún no está
+    if (!window.google || !window.google.maps || !window.google.maps.geometry) {
       const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry`;
       script.async = true;
