@@ -1,19 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 
 function MapaRuta({ origen, destino }) {
+  // Log para debug
+  console.log("MapaRuta render:", { origen, destino, google: !!window.google, googleMaps: !!window.google?.maps });
+
   const mapRef = useRef(null);
   const [info, setInfo] = useState({ distancia: null, duracion: null, error: null });
 
   useEffect(() => {
     if (!origen || !destino) return;
-    if (!window.google) {
+    if (!window.google || !window.google.maps) {
       setInfo({ distancia: null, duracion: null, error: "Google Maps no está cargado." });
       return;
     }
 
+    // Instancia el mapa centrado en Misiones (puedes cambiar el centro)
     const map = new window.google.maps.Map(mapRef.current, {
       zoom: 7,
-      center: { lat: -27.3671, lng: -55.8961 }, // Centro aproximado de Misiones
+      center: { lat: -27.3671, lng: -55.8961 }, // Ajusta según tu región
     });
 
     const directionsService = new window.google.maps.DirectionsService();
@@ -48,7 +52,7 @@ function MapaRuta({ origen, destino }) {
       }
     );
 
-    // Cleanup
+    // Limpia el renderer al desmontar
     return () => {
       directionsRenderer.setMap(null);
     };
