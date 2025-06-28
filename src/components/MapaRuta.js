@@ -5,7 +5,6 @@ export default function MapaRuta({ origen, destino }) {
   const [distancia, setDistancia] = useState("");
   const [duracion, setDuracion] = useState("");
   const [error, setError] = useState("");
-  const [mapLoaded, setMapLoaded] = useState(false);
 
   // NUEVA API KEY
   const API_KEY = "AIzaSyCJ0WA7v-rvHZIU4VXFnDyBGoo_XTxtYTE";
@@ -16,36 +15,33 @@ export default function MapaRuta({ origen, destino }) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.status === "OK") {
-      return data.results[0].geometry.location;
+      // Corrige: la API devuelve lat, lng pero la Routes API quiere latitude, longitude
+      return {
+        latitude: data.results[0].geometry.location.lat,
+        longitude: data.results[0].geometry.location.lng,
+      };
     } else {
       throw new Error("No se pudo geocodificar: " + address);
     }
   }
 
   useEffect(() => {
-    // Carga Google Maps JS con geometry si aún no está
-    if (!window.google || !window.google.maps || !window.google.maps.geometry) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry`;
-      script.async = true;
-      script.onload = () => setMapLoaded(true);
-      document.body.appendChild(script);
-      return;
-    }
-    setMapLoaded(true);
-  }, [API_KEY]);
-
-  useEffect(() => {
-    if (!mapLoaded || !origen || !destino) return;
+    if (!origen || !destino) return;
 
     const calcularRuta = async () => {
       try {
+        // Espera a que window.google esté disponible (si el usuario recarga muy rápido)
+        if (!window.google || !window.google.maps || !window.google.maps.geometry) {
+          setTimeout(calcularRuta, 500);
+          return;
+        }
+
         const [origCoord, destCoord] = await Promise.all([
           geocode(origen),
           geocode(destino)
         ]);
 
-        // Llamada REST a Routes API
+        // Llamada REST a Routes API -- OJO: latitude/longitude en vez de lat/lng
         const url = `https://routes.googleapis.com/directions/v2:computeRoutes?key=${API_KEY}`;
         const body = {
           origin: { location: { latLng: origCoord } },
@@ -77,7 +73,7 @@ export default function MapaRuta({ origen, destino }) {
           // Mostrar ruta en el mapa (polyline)
           const map = new window.google.maps.Map(mapRef.current, {
             zoom: 7,
-            center: origCoord,
+            center: { lat: origCoord.latitude, lng: origCoord.longitude },
           });
 
           if (
@@ -115,7 +111,8 @@ export default function MapaRuta({ origen, destino }) {
     };
 
     calcularRuta();
-  }, [mapLoaded, origen, destino, API_KEY]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origen, destino]);
 
   return (
     <div>
