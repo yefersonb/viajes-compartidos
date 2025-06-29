@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+// BuscadorViajes.js
+import React, { useEffect, useState } from "react";
 
 export default function BuscadorViajes({ viajes = [], onBuscar }) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState("Montecarlo");
+
+  useEffect(() => {
+    if (onBuscar) onBuscar("Montecarlo");
+  }, [onBuscar]);
 
   const manejarCambio = (e) => {
     const valor = e.target.value;
@@ -10,7 +15,7 @@ export default function BuscadorViajes({ viajes = [], onBuscar }) {
   };
 
   return (
-    <div className="buscador-viajes">
+    <div className="buscador-viajes" style={{ marginBottom: "1.5rem" }}>
       <input
         type="text"
         placeholder="Buscar por origen o destino..."
@@ -20,9 +25,9 @@ export default function BuscadorViajes({ viajes = [], onBuscar }) {
           padding: "8px",
           width: "100%",
           maxWidth: "400px",
-          marginBottom: "1rem",
           borderRadius: "6px",
           border: "1px solid #ccc",
+          marginBottom: "0.5rem",
         }}
       />
       <p>{viajes.length} viajes cargados</p>
