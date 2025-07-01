@@ -1,36 +1,38 @@
-// BuscadorViajes.js
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import DetalleViaje from "./DetalleViaje";
 
-export default function BuscadorViajes({ viajes = [], onBuscar }) {
-  const [input, setInput] = useState("Montecarlo");
+export default function BuscadorViajes({ viajes }) {
+  const [viajeSeleccionado, setViajeSeleccionado] = useState(null);
 
-  useEffect(() => {
-    if (onBuscar) onBuscar("Montecarlo");
-  }, [onBuscar]);
-
-  const manejarCambio = (e) => {
-    const valor = e.target.value;
-    setInput(valor);
-    if (onBuscar) onBuscar(valor);
+  const handleReservar = (idViaje) => {
+    // 🔧  tu lógica de reserva (Firestore, etc.)
+    console.log("Reservado", idViaje);
+    setViajeSeleccionado(null);
   };
 
-  return (
-    <div className="buscador-viajes" style={{ marginBottom: "1.5rem" }}>
-      <input
-        type="text"
-        placeholder="Buscar por origen o destino..."
-        value={input}
-        onChange={manejarCambio}
-        style={{
-          padding: "8px",
-          width: "100%",
-          maxWidth: "400px",
-          borderRadius: "6px",
-          border: "1px solid #ccc",
-          marginBottom: "0.5rem",
-        }}
+  if (viajeSeleccionado) {
+    return (
+      <DetalleViaje
+        viaje={viajeSeleccionado}
+        onClose={() => setViajeSeleccionado(null)}
+        onReservar={handleReservar}
       />
-      <p>{viajes.length} viajes cargados</p>
+    );
+  }
+
+  return (
+    <div>
+      <h2>Buscar Viajes</h2>
+      {viajes.map((viaje) => (
+        <div key={viaje.id} style={{ marginBottom: 10 }}>
+          <p>
+            {viaje.origen} → {viaje.destino} ({viaje.fecha})
+          </p>
+          <button onClick={() => setViajeSeleccionado(viaje)}>
+            Ver detalles
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

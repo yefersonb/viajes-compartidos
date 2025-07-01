@@ -1,4 +1,3 @@
-// App.js
 import React, { useEffect, useState } from "react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -22,6 +21,8 @@ import NuevoVehiculo from "./components/NuevoVehiculo";
 import MisVehiculos from "./components/MisVehiculos";
 import NuevoViaje from "./components/NuevoViaje";
 import BuscadorViajes from "./components/BuscadorViajes";
+import DetalleViaje from "./components/DetalleViaje";
+// import PerfilViajero disabled
 
 const modalStyles = {
   overlay: {
@@ -78,9 +79,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [rol, setRol] = useState(null);
   const [viajes, setViajes] = useState([]);
-  const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
-  const [busqueda, setBusqueda] = useState("");
   const [reservas, setReservas] = useState({});
+  const [busqueda, setBusqueda] = useState("");
+  const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
+  const [viajeSeleccionado, setViajeSeleccionado] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -94,10 +96,8 @@ function App() {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const rolBD = docSnap.data().rol;
-            if (rolBD) {
-              setRol(rolBD);
-              localStorage.setItem("rolSeleccionado", rolBD);
-            }
+            setRol(rolBD);
+            localStorage.setItem("rolSeleccionado", rolBD);
           }
         }
       } else {
@@ -106,45 +106,40 @@ function App() {
       }
       setLoading(false);
     });
-    return () => unsubscribeAuth();
+    return unsubscribeAuth;
   }, []);
 
   useEffect(() => {
-    if (!usuario || rol !== "viajero") return;
-    const q = query(collection(db, "viajes"), orderBy("horario", "asc"));
-    const unsubscribeViajes = onSnapshot(q, (snapshot) => {
-      const datos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setViajes(datos);
-    });
-    return () => unsubscribeViajes();
-  }, [usuario, rol]);
-
-  useEffect(() => {
-    if (!usuario || rol !== "conductor") return;
-    const q = query(collection(db, "viajes"));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const viajesDelConductor = snapshot.docs
-        .filter((doc) => doc.data().conductor?.uid === usuario.uid)
-        .map((doc) => ({ id: doc.id, ...doc.data() }));
-      const todasLasReservas = {};
-      for (let viaje of viajesDelConductor) {
-        const resSnap = await getDocs(collection(db, "viajes", viaje.id, "reservas"));
-        todasLasReservas[viaje.id] = resSnap.docs.map((d) => d.data());
-      }
-      setReservas(todasLasReservas);
-    });
-    return () => unsubscribe();
+    if (!usuario) return;
+    if (rol === "viajero") {
+      const q = query(collection(db, "viajes"), orderBy("horario", "asc"));
+      return onSnapshot(q, (snap) => {
+        setViajes(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      });
+    }
+    if (rol === "conductor") {
+      const q = query(collection(db, "viajes"));
+      return onSnapshot(q, async (snapshot) => {
+        const propios = snapshot.docs
+          .filter((d) => d.data().conductor?.uid === usuario.uid)
+          .map((d) => ({ id: d.id, ...d.data() }));
+        setViajes(propios);
+        const allRes = {};
+        for (let v of propios) {
+          const resSnap = await getDocs(collection(db, "viajes", v.id, "reservas"));
+          allRes[v.id] = resSnap.docs.map((r) => r.data());
+        }
+        setReservas(allRes);
+      });
+    }
   }, [usuario, rol]);
 
   const cerrarSesion = async () => {
     try {
       await signOut(auth);
-      setUsuario(null);
-      setRol(null);
-      localStorage.removeItem("rolSeleccionado");
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      alert("Hubo un problema al cerrar sesión.");
+    } catch (e) {
+      console.error(e);
+      alert("Error al cerrar sesión");
     }
   };
 
@@ -153,17 +148,16 @@ function App() {
       const reserva = {
         uid: usuario.uid,
         nombre: usuario.displayName || usuario.email,
-        whatsapp: usuario.phoneNumber || "sin teléfono",
+        whatsapp: usuario.phoneNumber || "",
         fechaReserva: new Date(),
       };
       await addDoc(collection(db, "viajes", viajeId, "reservas"), reserva);
-      await updateDoc(doc(db, "viajes", viajeId), {
-        asientos: increment(-1),
-      });
-      alert("¡Reserva realizada con éxito! 🙌");
-    } catch (error) {
-      console.error("Error al reservar:", error);
-      alert("Hubo un problema al reservar el viaje.");
+      await updateDoc(doc(db, "viajes", viajeId), { asientos: increment(-1) });
+      alert("¡Reserva exitosa!");
+      setViajeSeleccionado(null);
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un problema al reservar");
     }
   };
 
@@ -173,19 +167,12 @@ function App() {
     <div className="app-container">
       <h1>🚗 Viajes Compartidos</h1>
       {!usuario ? (
-        <>
-          <p>Iniciar sesión</p>
-          <Login onLogin={setUsuario} />
-        </>
+        <Login onLogin={setUsuario} />
       ) : (
         <>
-          <p>
-            Hola, {usuario.displayName || usuario.email}{" "}
-            <span className="role-badge">({rol})</span>
-          </p>
+          <p>Hola, {usuario.displayName || usuario.email} <span>({rol})</span></p>
           <button onClick={cerrarSesion}>Cerrar sesión</button>
           <button
-            className="change-role-btn"
             style={modalStyles.changeRoleBtn}
             onClick={() => setMostrarSelectorRol(true)}
             title="Cambiar rol"
@@ -204,37 +191,25 @@ function App() {
                 </button>
                 <SeleccionarRol
                   usuario={usuario}
-                  setRol={(nuevoRol) => {
-                    setRol(nuevoRol);
-                    localStorage.setItem("rolSeleccionado", nuevoRol);
-                    setMostrarSelectorRol(false);
-                  }}
+                  setRol={(r) => { setRol(r); localStorage.setItem("rolSeleccionado", r); setMostrarSelectorRol(false); }}
                 />
               </div>
             </div>
           )}
 
-          <hr />
-
           {rol === "conductor" && (
-            <div className="card">
+            <div>
               <PerfilConductor />
-              <hr />
               <MisVehiculos />
-              <hr />
               <NuevoVehiculo />
-              <hr />
               <NuevoViaje />
-              <hr />
               <h3>Reservas Recibidas</h3>
-              {Object.entries(reservas).map(([viajeId, lista]) => (
-                <div key={viajeId} style={{ marginBottom: "1rem" }}>
-                  <strong>Viaje ID:</strong> {viajeId}
+              {Object.entries(reservas).map(([id, list]) => (
+                <div key={id}>
+                  <strong>Viaje {id}</strong>
                   <ul>
-                    {lista.map((r, i) => (
-                      <li key={i}>
-                        {r.nombre} - <a href={`https://wa.me/${r.whatsapp}`} target="_blank" rel="noreferrer">{r.whatsapp}</a>
-                      </li>
+                    {list.map((r, i) => (
+                      <li key={i}>{r.nombre} - <a href={`https://wa.me/${r.whatsapp}`} target="_blank" rel="noreferrer">{r.whatsapp}</a></li>
                     ))}
                   </ul>
                 </div>
@@ -243,40 +218,37 @@ function App() {
           )}
 
           {rol === "viajero" && (
-            <>
+            <div>
               <BuscadorViajes viajes={viajes} onBuscar={setBusqueda} />
               <h2>Viajes Disponibles</h2>
               {viajes.length === 0 ? (
                 <p>No hay viajes publicados.</p>
               ) : (
                 <ul className="viajes-list">
-                  {(busqueda
-                    ? viajes.filter(
-                        (v) =>
-                          v.origen.toLowerCase().includes(busqueda.toLowerCase()) ||
+                  {viajes
+                    .filter(v =>
+                      busqueda
+                        ? v.origen.toLowerCase().includes(busqueda.toLowerCase()) ||
                           v.destino.toLowerCase().includes(busqueda.toLowerCase())
-                      )
-                    : viajes
-                  ).map((v) => (
-                    <li key={v.id}>
-                      <strong>
-                        {v.origen} → {v.destino}
-                      </strong>
-                      <br />
-                      Fecha: {v.horario}
-                      <br />
-                      Asientos disponibles: {v.asientos}
-                      <br />
-                      Contacto: <a href={`https://wa.me/${v.conductor.whatsapp}`} target="_blank" rel="noopener noreferrer">{v.conductor.nombre}</a>
-                      <br />
-                      <button onClick={() => reservarViaje(v.id)} disabled={v.asientos <= 0}>
-                        {v.asientos > 0 ? "Reservar" : "Sin asientos"}
-                      </button>
-                    </li>
-                  ))}
+                        : true
+                    )
+                    .map(v => (
+                      <li key={v.id} style={{ marginBottom: '1rem' }}>
+                        <strong>{v.origen} → {v.destino}</strong><br/>
+                        Fecha: {v.horario}<br/>
+                        Asientos: {v.asientos}<br/>
+                        <button onClick={() => reservarViaje(v.id)} disabled={v.asientos <= 0}>
+                          {v.asientos > 0 ? "Reservar" : "Sin asientos"}
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               )}
-            </>
+            </div>
+          )}
+
+          {viajeSeleccionado && (
+            <DetalleViaje viaje={viajeSeleccionado} onReservar={reservarViaje} onClose={() => setViajeSeleccionado(null)} />
           )}
         </>
       )}
