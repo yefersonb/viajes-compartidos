@@ -1,3 +1,4 @@
+// src/components/SeleccionarRol.js
 import React from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -5,14 +6,16 @@ import { db } from "../firebase";
 function SeleccionarRol({ usuario, setRol }) {
   const elegirRol = async (rolElegido) => {
     try {
-      await setDoc(doc(db, "usuarios", usuario.uid), {
-        nombre: usuario.displayName,
-        email: usuario.email,
-        rol: rolElegido,
-      });
+      await setDoc(
+        doc(db, "usuarios", usuario.uid),
+        {
+          rol: rolElegido
+        },
+        { merge: true }      // ← conserva todos los campos previos
+      );
 
-      localStorage.setItem("rolSeleccionado", rolElegido); // 🧠 lo guardamos localmente
-      setRol(rolElegido); // 🔄 actualizamos el estado
+      localStorage.setItem("rolSeleccionado", rolElegido);
+      setRol(rolElegido);
     } catch (error) {
       console.error("Error al guardar el rol:", error);
       alert("Hubo un problema al guardar tu rol.");
@@ -24,13 +27,13 @@ function SeleccionarRol({ usuario, setRol }) {
       <h2 className="text-xl font-bold mb-4">¿Cómo querés usar la app?</h2>
       <button
         onClick={() => elegirRol("conductor")}
-        className="bg-blue-500 text-white px-4 py-2 rounded m-2"
+        className="btn btn-primary mx-2"
       >
         Conducir
       </button>
       <button
         onClick={() => elegirRol("viajero")}
-        className="bg-green-500 text-white px-4 py-2 rounded m-2"
+        className="btn btn-secondary mx-2"
       >
         Viajar
       </button>

@@ -1,14 +1,108 @@
-.dv-close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-size: 24px;
-  color: #333;
-  background: none;
-  border: none;
-  cursor: pointer;
+/* src/components/DetalleViaje.css */
+
+/* --- Overlay ----------------------------------------------------------- */
+.dv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.dv-close:hover {
-  color: #e63946;
+/* --- Modal ------------------------------------------------------------- */
+.dv-modal {
+  background: #ffffff;
+  border-radius: 1rem;              /* extra‑rounded corners */
+  width: min(92vw, 560px);
+  max-height: 90vh;
+  overflow: hidden;                /* clip map corners */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.dv-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  color: #606060;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.dv-close:hover { transform: scale(1.15); }
+
+h2 {
+  margin: 0;
+  padding: 1rem 1.5rem 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* Map keeps rounded top corners */
+.dv-modal > div:first-of-type .gm-style {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+/* --- Info list --------------------------------------------------------- */
+.dv-modal p {
+  margin: 0.25rem 1.5rem;
+  color: #444;
+  font-size: 0.95rem;
+}
+.dv-modal p strong { color: #222; }
+
+/* Route / distance error message */
+.dv-modal p[style*="color: #e63946"] {
+  margin: 0.75rem 1.5rem 0;
+  font-weight: 500;
+}
+
+/* --- Action buttons ---------------------------------------------------- */
+.dv-actions {
+  margin: 1rem 1.5rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dv-actions button {
+  flex: 1;
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.dv-actions button:first-child {
+  background: #e0e0e0;
+  color: #333;
+}
+.dv-actions button:first-child:hover { background: #d5d5d5; }
+
+.dv-actions button:last-child {
+  background: #3b82f6;   /* Tailwind blue‑500 */
+  color: #fff;
+}
+.dv-actions button:last-child:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.dv-actions button:last-child:not(:disabled):hover {
+  background: #2563eb;   /* blue‑600 */
+}
+
+@media (max-width: 480px) {
+  .dv-modal {
+    width: 95vw;
+  }
 }

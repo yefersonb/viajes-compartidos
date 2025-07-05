@@ -111,7 +111,7 @@ export default function NuevoViaje() {
         type="datetime-local"
         value={fechaHora}
         onChange={(e) => setFechaHora(e.target.value)}
-        className="border p-2 m-2 w-full"
+        className="input"
       />
 
       <input
@@ -119,13 +119,13 @@ export default function NuevoViaje() {
         min={1}
         value={asientos}
         onChange={(e) => setAsientos(parseInt(e.target.value, 10))}
-        className="border p-2 m-2 w-full"
+        className="input"
       />
 
       <button
         onClick={publicarViaje}
         disabled={formularioIncompleto || loading}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
+        className="btn btn-…"
       >
         {loading ? "Publicando..." : "Publicar Viaje"}
       </button>
