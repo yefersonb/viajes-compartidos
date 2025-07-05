@@ -15,4 +15,5 @@ Plataforma colaborativa para compartir viajes entre personas. Inspirado en BlaBl
 ## Instalación
 ```bash
 npm install
-npm start
+npm start 
+hola
