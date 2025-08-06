@@ -1,4 +1,4 @@
-// src/App.js
+// src/App.js — Componente principal de la aplicación
 import React, { useState, useEffect } from "react";
 import {
   collection,
@@ -11,20 +11,24 @@ import {
   orderBy,
   getDoc,
   getDocs,
-  setDoc
+  setDoc,
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import "./App.css";
+
 import Login from "./components/Login";
 import SeleccionarRol from "./components/SeleccionarRol";
-import PerfilConductor from "./components/PerfilConductor";
+import PerfilConductorV2 from "./components/PerfilConductorV2Enhanced";
 import VehiculosConductor from "./components/VehiculosConductor";
-import NuevoViaje from "./components/NuevoViaje";
 import BuscadorViajes from "./components/BuscadorViajes";
-import PerfilViajero from "./components/PerfilViajero";
+import PerfilViajeroPage from "./components/PerfilViajeroPage";
+import PagoButton from "./components/PagoButton";
+import Header from "./Header";
+import ReservasRecibidas from "./components/ReservasRecibidas";
+import VerificacionVehiculosAdmin from "./components/vehicleVerification/VerificacionVehiculosAdmin";
 
-const modalStyles = { /* estilos previos */ };
+const modalStyles = {}; // Puedes agregar estilos si lo deseas
 
 export default function App() {
   const [usuario, setUsuario] = useState(null);
@@ -33,17 +37,17 @@ export default function App() {
   const [viajes, setViajes] = useState([]);
   const [reservas, setReservas] = useState({});
   const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
-  const [mostrarVehiculos, setMostrarVehiculos] = useState(false);
-  const [reservaActiva, setReservaActiva] = useState(null);
   const [perfilCompleto, setPerfilCompleto] = useState(true);
+  const [viajeReservado, setViajeReservado] = useState(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setUsuario(user);
       if (user) {
         const stored = localStorage.getItem("rolSeleccionado");
-        if (stored) setRol(stored);
-        else {
+        if (stored) {
+          setRol(stored);
+        } else {
           const snap = await getDoc(doc(db, "usuarios", user.uid));
           if (snap.exists()) {
             setRol(snap.data().rol);
@@ -59,15 +63,18 @@ export default function App() {
     return unsub;
   }, []);
 
+  // Validación de completitud para viajero (más tolerante)
   useEffect(() => {
-    const verificarPerfil = async () => {
-      if (!usuario || rol !== "viajero") return;
+    if (!usuario || rol !== "viajero") return;
+    (async () => {
       const ref = doc(db, "usuarios", usuario.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
-        const completo = data.whatsapp && data.nombre && data.direccion;
-        setPerfilCompleto(!!completo);
+        const tieneNombre = data.nombre || usuario.displayName;
+        const tieneWhatsapp = data.whatsapp || usuario.phoneNumber;
+        const tieneDireccion = !!data.direccion;
+        setPerfilCompleto(!!(tieneNombre && tieneWhatsapp && tieneDireccion));
       } else {
         await setDoc(ref, {
           rol: "viajero",
@@ -77,34 +84,29 @@ export default function App() {
         });
         setPerfilCompleto(false);
       }
-    };
-    verificarPerfil();
+    })();
   }, [usuario, rol]);
 
+  // Carga viajes y reservas si es conductor
   useEffect(() => {
-    if (!usuario) return;
+    if (!usuario || rol !== "conductor") return;
     const q = query(collection(db, "viajes"), orderBy("horario", "asc"));
-    const unsubV = onSnapshot(q, (snap) => {
-      setViajes(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    const unsubV = onSnapshot(q, async (snap) => {
+      const misViajes = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((v) => v.conductor?.uid === usuario.uid);
+      setViajes(misViajes);
+      const temp = {};
+      for (const v of misViajes) {
+        const rs = await getDocs(collection(db, "viajes", v.id, "reservas"));
+        temp[v.id] = rs.docs.map((r) => r.data());
+      }
+      setReservas(temp);
     });
-    let unsubR = () => {};
-    if (rol === "conductor") {
-      unsubR = onSnapshot(q, async (snap) => {
-        const temp = {};
-        for (const d of snap.docs.filter((d) => d.data().conductor?.uid === usuario.uid)) {
-          const rs = await getDocs(collection(db, "viajes", d.id, "reservas"));
-          temp[d.id] = rs.docs.map((r) => r.data());
-        }
-        setReservas(temp);
-      });
-    }
-    return () => {
-      unsubV();
-      unsubR();
-    };
+    return () => unsubV();
   }, [usuario, rol]);
 
-  const cerrarSesion = async () => await signOut(auth);
+  const cerrarSesion = () => signOut(auth);
 
   const reservarViaje = async (id) => {
     try {
@@ -116,7 +118,8 @@ export default function App() {
       };
       await addDoc(collection(db, "viajes", id, "reservas"), data);
       await updateDoc(doc(db, "viajes", id), { asientos: increment(-1) });
-      alert("¡Reserva exitosa!");
+      setViajeReservado(viajes.find((v) => v.id === id));
+      alert("¡Reserva exitosa! Ahora podés pagar el viaje.");
     } catch (e) {
       console.error(e);
       alert("Hubo un problema al reservar");
@@ -124,104 +127,85 @@ export default function App() {
   };
 
   if (loading) return <p>Cargando...</p>;
-
-  if (rol === "viajero" && !perfilCompleto) return <PerfilViajero usuario={usuario} />;
+  if (!usuario) return <Login onLogin={setUsuario} />;
 
   return (
     <div className="app-container">
-      <h1>🚗 Viajes Compartidos</h1>
-      {!usuario ? (
-        <Login onLogin={setUsuario} />
-      ) : (
-        <>
-          <div className="user-header">
-            <p>Hola, {usuario.displayName || usuario.email} ({rol})</p>
-            <button onClick={cerrarSesion}>Cerrar sesión</button>
-            <button onClick={() => setMostrarSelectorRol(true)}>Cambiar rol</button>
-          </div>
-
+      <Header />
+      <div className="user-header">
+        <p>
+          Hola, {usuario.displayName || usuario.email} ({rol})
+        </p>
+        <div className="user-actions">
+          <button onClick={cerrarSesion} className="link-btn">
+            Cerrar sesión
+          </button>
+          <button
+            onClick={() => setMostrarSelectorRol(true)}
+            className="link-btn"
+          >
+            Cambiar rol
+          </button>
           {mostrarSelectorRol && (
-            <div style={modalStyles.overlay}>
-              <div style={modalStyles.content}>
-                <button style={modalStyles.closeBtn} onClick={() => setMostrarSelectorRol(false)}>×</button>
-                <SeleccionarRol
-                  usuario={usuario}
-                  setRol={(r) => { setRol(r); localStorage.setItem("rolSeleccionado", r); setMostrarSelectorRol(false); }}
-                />
-              </div>
-            </div>
+            <button
+              className="link-btn"
+              onClick={() => setMostrarSelectorRol(false)}
+            >
+              ×
+            </button>
           )}
-
-          {rol === "conductor" && (
-            <>
-              <PerfilConductor />
-              <button onClick={() => setMostrarVehiculos((v) => !v)}>
-                {mostrarVehiculos ? "Ocultar mis vehículos" : "Mis Vehículos"}
-              </button>
-              {mostrarVehiculos && <VehiculosConductor />}
-              <NuevoViaje />
-              <h3>Reservas Recibidas</h3>
-              {viajes.filter((v) => reservas[v.id]).map((v) => (
-                <div key={v.id} style={{ backgroundColor: '#f3f4f6', padding: '1rem', borderRadius: '0.5rem', marginTop: '1rem' }}>
-                  <h4 className="font-semibold">{v.origen} → {v.destino}</h4>
-                  <p>Vehículo: {v.vehiculo || '—'}</p>
-                  <p>Horario: {new Date(v.horario).toLocaleString()}</p>
-                  <ul>
-                    {reservas[v.id].length === 0 ? (
-                      <li>Sin reservas aún</li>
-                    ) : (
-                      reservas[v.id].map((r, i) => (
-                        <li key={i}>
-                          <button onClick={() => setReservaActiva({ parcela: r, viaje: v })}>
-                            {r.nombre} {r.whatsapp ? `(WA:${r.whatsapp})` : ''}
-                          </button>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </div>
-              ))}
-              {reservaActiva && (
-                <DetalleReserva
-                  viaje={reservaActiva.viaje}
-                  pasajero={reservaActiva.parcela}
-                  onClose={() => setReservaActiva(null)}
-                  onConfirm={() => { reservarViaje(reservaActiva.viaje.id); setReservaActiva(null); }}
-                />
-              )}
-            </>
-          )}
-
-          {rol === "viajero" && (
-            <>
-              <h3>Viajes Publicados</h3>
-              <div style={{ backgroundColor: '#f3f4f6', padding: '1rem', borderRadius: '0.5rem', marginTop: '1rem' }}>
-                <BuscadorViajes viajes={viajes} usuario={usuario} onReservar={reservarViaje} />
-              </div>
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-function DetalleReserva({ viaje, pasajero, onClose, onConfirm }) {
-  return (
-    <div style={modalStyles.overlay} onClick={onClose}>
-      <div style={modalStyles.content} onClick={(e) => e.stopPropagation()}>
-        <button style={modalStyles.closeBtn} onClick={onClose}>×</button>
-        <img src={pasajero.photoURL || '/default-avatar.png'} alt={pasajero.nombre} style={{ width: 80, borderRadius: '50%' }} />
-        <h2>{pasajero.nombre}</h2>
-        <p><strong>Dirección:</strong> {pasajero.direccion || '—'}</p>
-        <p><strong>Reputación:</strong> {pasajero.reputacion ?? 'Sin calificar'}</p>
-        <p><strong>Viaje:</strong> {viaje.origen} → {viaje.destino}</p>
-        <p><strong>Horario:</strong> {new Date(viaje.horario).toLocaleString()}</p>
-        <div style={{ marginTop: '1rem' }}>
-          <button onClick={onConfirm}>Confirmar</button>
-          <button onClick={onClose}>Cerrar</button>
         </div>
       </div>
+
+      {mostrarSelectorRol && (
+        <div style={modalStyles.overlay}>
+          <div style={modalStyles.content}>
+            <SeleccionarRol
+              usuario={usuario}
+              setRol={(r) => {
+                setRol(r);
+                localStorage.setItem("rolSeleccionado", r);
+                setMostrarSelectorRol(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {rol === "conductor" ? (
+        <PerfilConductorV2 viajes={viajes} reservas={reservas} />
+      ) : rol === "viajero" ? (
+        <div>
+          {/* Perfil del viajero */}
+          <PerfilViajeroPage perfilCompleto={perfilCompleto} />
+
+          {/* Buscador / viajes publicados debajo si querés */}
+          <div style={{ marginTop: 32 }}>
+            <h3>Buscar viajes</h3>
+            <div
+              style={{
+                backgroundColor: "#f3f4f6",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                marginTop: "1rem",
+              }}
+            >
+              <BuscadorViajes
+                viajes={viajes}
+                usuario={usuario}
+                onReservar={reservarViaje}
+              />
+            </div>
+            {viajeReservado && (
+              <div style={{ marginTop: 16 }}>
+                <PagoButton viaje={viajeReservado} usuario={usuario} />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <VerificacionVehiculosAdmin />
+      )}
     </div>
   );
 }

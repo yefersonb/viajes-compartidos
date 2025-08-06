@@ -8,12 +8,9 @@ function SeleccionarRol({ usuario, setRol }) {
     try {
       await setDoc(
         doc(db, "usuarios", usuario.uid),
-        {
-          rol: rolElegido
-        },
-        { merge: true }      // ← conserva todos los campos previos
+        { rol: rolElegido },
+        { merge: true }
       );
-
       localStorage.setItem("rolSeleccionado", rolElegido);
       setRol(rolElegido);
     } catch (error) {
@@ -23,20 +20,77 @@ function SeleccionarRol({ usuario, setRol }) {
   };
 
   return (
-    <div className="text-center p-4">
-      <h2 className="text-xl font-bold mb-4">¿Cómo querés usar la app?</h2>
-      <button
-        onClick={() => elegirRol("conductor")}
-        className="btn btn-primary mx-2"
-      >
-        Conducir
-      </button>
-      <button
-        onClick={() => elegirRol("viajero")}
-        className="btn btn-secondary mx-2"
-      >
-        Viajar
-      </button>
+    <div style={{ textAlign: "center", padding: "0.0rem 1rem" }}> {/* 🔥 CAMBIO AQUÍ: reduje padding de "1rem" a "0.5rem 1rem" */}
+      <h2 style={{ fontSize: "1.20rem", fontWeight: "bold", marginBottom: "1rem" }}>
+        ¿Cómo querés usar la app?
+      </h2>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+        <span
+          onClick={() => elegirRol("conductor")}
+          style={{
+            cursor: 'pointer',
+            color: '#444',
+            fontWeight: 500,
+            fontSize: '1.05rem',
+            position: 'relative',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseEnter={(e) => (e.target.style.color = '#2563eb')}
+          onMouseLeave={(e) => (e.target.style.color = '#444')}
+        >
+          Conducir
+          <span
+            style={{
+              display: 'block',
+              height: '100px',
+              backgroundColor: '#2563eb',
+              position: 'absolute',
+              bottom: -4,
+              left: 0,
+              right: 0,
+              transform: 'scaleX(0)',
+              transition: 'transform 0.3s ease',
+            }}
+          />
+        </span>
+        <span
+          onClick={() => elegirRol("viajero")}
+          style={{
+            cursor: 'pointer',
+            color: '#444',
+            fontWeight: 500,
+            fontSize: '1.05rem',
+            position: 'relative',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseEnter={(e) => (e.target.style.color = '#2563eb')}
+          onMouseLeave={(e) => (e.target.style.color = '#444')}
+        >
+          Viajar
+          <span
+            style={{
+              display: 'block',
+              height: '2px',
+              backgroundColor: '#2563eb',
+              position: 'absolute',
+              bottom: -4,
+              left: 0,
+              right: 0,
+              transform: 'scaleX(0)',
+              transition: 'transform 0.3s ease',
+            }}
+          />
+        </span>
+      </div>
+      {/* 🔥 Línea visible sí o sí */}
+      <div style={{
+        marginTop: '20px',
+        marginBottom: '5px',
+        width: '100%',
+        height: '3px',
+        backgroundColor: '#999',
+        borderRadius: '4px'
+      }} />
     </div>
   );
 }

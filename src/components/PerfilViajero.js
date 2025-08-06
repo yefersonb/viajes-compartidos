@@ -1,133 +1,180 @@
-// src/components/PerfilViajero.js
-import React, { useState, useEffect } from "react";
+// src/components/PerfilViajero.js — Formulario de perfil para viajeros
+import React, { useState, useEffect, useMemo } from "react";
 import { useUser } from "../contexts/UserContext";
 import { db } from "../firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
-export default function PerfilViajero() {
+export default function PerfilViajero({ onPerfilCompletoChange }) {
   const { usuario } = useUser();
-  const defaultPrefs = { mascotas: false, musica: true, fumar: false, aire: true };
 
   const [nombre, setNombre] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [preferencias, setPreferencias] = useState(defaultPrefs);
+  const [perfilVisible, setPerfilVisible] = useState(true);
   const [guardado, setGuardado] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  // Chequeo de completitud
+  const perfilCompleto = useMemo(() => {
+    return (
+      nombre.trim().length > 0 &&
+      whatsapp.trim().length > 0 &&
+      direccion.trim().length > 0
+    );
+  }, [nombre, whatsapp, direccion]);
 
   useEffect(() => {
-    if (!usuario) return;
-    const cargarPerfil = async () => {
+    if (typeof onPerfilCompletoChange === "function") {
+      onPerfilCompletoChange(perfilCompleto);
+    }
+  }, [perfilCompleto, onPerfilCompletoChange]);
+
+  // Cargar perfil si existe
+  useEffect(() => {
+    if (!usuario?.uid) return;
+    (async () => {
       try {
         const ref = doc(db, "usuarios", usuario.uid);
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const data = snap.data();
-          setNombre(data.nombre || usuario.displayName || "");
+          setNombre(data.nombre || "");
           setWhatsapp(data.whatsapp || "");
           setDireccion(data.direccion || "");
-          setPreferencias(prev => data.preferencias ?? prev);
+          setPerfilVisible(data.perfilVisible ?? true);
         }
-      } catch (error) {
-        console.error("Error cargando perfil de viajero:", error);
+      } catch (e) {
+        console.error("Error cargando perfil viajero:", e);
+        setError("No se pudo cargar el perfil.");
+      } finally {
+        setCargando(false);
       }
-    };
-    cargarPerfil();
+    })();
   }, [usuario]);
 
-  const guardarPerfil = async () => {
-    if (!nombre || !whatsapp || !direccion) {
-      alert("Por favor completá todos los campos");
+  const handleGuardarPerfil = async () => {
+    if (!perfilCompleto) {
+      alert("Completa nombre, WhatsApp y dirección antes de continuar.");
       return;
     }
-
-    const perfil = {
-      nombre,
-      whatsapp,
-      direccion,
-      preferencias,
-      rol: "viajero",
-      fotoPerfil: usuario.photoURL || "",
-      fechaRegistro: new Date(),
-    };
-
+    if (!usuario?.uid) return;
+    setGuardando(true);
+    setError(null);
     try {
-      await setDoc(doc(db, "usuarios", usuario.uid), perfil, { merge: true });
+      await setDoc(
+        doc(db, "usuarios", usuario.uid),
+        {
+          rol: "viajero",
+          nombre: nombre.trim(),
+          whatsapp: whatsapp.trim(),
+          direccion: direccion.trim(),
+          perfilVisible,
+          actualizadoEn: serverTimestamp(),
+        },
+        { merge: true }
+      );
       setGuardado(true);
-      setTimeout(() => window.location.reload(), 1000);
-    } catch (error) {
-      console.error("Error guardando perfil de viajero:", error);
-      alert("Hubo un error al guardar tu perfil. Intentá nuevamente.");
+      setTimeout(() => {
+        window.location.href = "/"; // o reemplazar por navegación programática
+      }, 1000);
+    } catch (e) {
+      console.error("Error guardando perfil:", e);
+      setError("Hubo un error al guardar tu perfil. Intentá nuevamente.");
+    } finally {
+      setGuardando(false);
     }
   };
 
-  const handleCheckbox = (e) => {
-    setPreferencias(prev => ({ ...prev, [e.target.name]: e.target.checked }));
-  };
+  if (cargando) return <div className="text-center py-6">Cargando perfil...</div>;
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl mb-4 text-center">🧳 Completá tu perfil de viajero</h2>
+    <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg">
+      <h2 className="text-3xl font-extrabold mb-6 text-center">🧳 Completá tu perfil de viajero</h2>
 
-      <label className="block mb-2">
-        Nombre completo:
+      {error && <div className="mb-4 text-red-600 text-center">{error}</div>}
+
+      {!perfilCompleto && (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+          <p className="text-sm">
+            Faltan datos para completar el perfil. Necesitás nombre, WhatsApp y dirección para poder reservar viajes. Completálos y guardá. 👇
+          </p>
+        </div>
+      )}
+
+      <label className="block mb-4">
+        <span className="block font-semibold mb-1">Nombre completo</span>
         <input
           type="text"
-          className="input mt-1"
+          className="input mt-1 w-full rounded-md border px-3 py-2"
           value={nombre}
-          onChange={e => setNombre(e.target.value)}
-        />
-      </label>
-
-      <label className="block mb-2">
-        WhatsApp:
-        <input
-          type="text"
-          className="input mt-1"
-          value={whatsapp}
-          onChange={e => setWhatsapp(e.target.value)}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Ej: Juan Pérez"
         />
       </label>
 
       <label className="block mb-4">
-        Dirección:
+        <span className="block font-semibold mb-1">WhatsApp</span>
         <input
           type="text"
-          className="input mt-1"
-          value={direccion}
-          onChange={e => setDireccion(e.target.value)}
+          className="input mt-1 w-full rounded-md border px-3 py-2"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          placeholder="+54 9 3751 XXXX"
         />
       </label>
 
-      <div className="card mb-4">
-        <h4 className="mb-2 font-semibold">Preferencias</h4>
-        {Object.entries(preferencias).map(([key, val]) => (
-          <label key={key} className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              name={key}
-              checked={val}
-              onChange={handleCheckbox}
-            />
-            {key === "mascotas" && "Acepta mascotas"}
-            {key === "musica" && "Escucha música"}
-            {key === "fumar" && "Permite fumar"}
-            {key === "aire" && "Usa aire acondicionado"}
-          </label>
-        ))}
+      <label className="block mb-6">
+        <span className="block font-semibold mb-1">Dirección</span>
+        <input
+          type="text"
+          className="input mt-1 w-full rounded-md border px-3 py-2"
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)}
+          placeholder="Ciudad, barrio, etc."
+        />
+      </label>
+
+      <div className="mb-6">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={perfilVisible}
+            onChange={(e) => setPerfilVisible(e.target.checked)}
+          />
+          <span className="font-medium">Mostrar mi perfil al conductor</span>
+        </label>
+        {!perfilVisible && (
+          <p className="text-yellow-600 text-sm mt-1">
+            ⚠️ Si ocultás tu perfil, los conductores no podrán ver quién les reservó.
+          </p>
+        )}
       </div>
 
       <button
-        className="btn btn-primary w-full"
-        onClick={guardarPerfil}
+        onClick={handleGuardarPerfil}
+        disabled={guardando}
+        className="w-full py-3 font-bold rounded-xl shadow hover:scale-[1.01] transition disabled:opacity-50 bg-blue-600 text-white"
       >
-        Guardar perfil
+        {guardando ? "Guardando..." : perfilCompleto ? "Guardar perfil" : "Faltan datos necesarios"}
       </button>
 
       {guardado && (
-        <p className="mt-2 text-center text-green-600">
-          ✅ Perfil guardado. Redirigiendo...
+        <p className="mt-3 text-center text-green-600">
+          ✅ Perfil guardado con éxito. Redirigiendo...
         </p>
       )}
     </div>
+  );
+}
+
+// Ejemplo de guard / chequeo antes de reservar (puede ser hook separado):
+export function usePuedeReservar(perfil) {
+  // perfil debería tener nombre, whatsapp, direccion y perfilVisible si corresponde
+  return (
+    perfil?.nombre?.trim()?.length > 0 &&
+    perfil?.whatsapp?.trim()?.length > 0 &&
+    perfil?.direccion?.trim()?.length > 0
   );
 }

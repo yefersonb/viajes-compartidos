@@ -1,4 +1,4 @@
-// src/components/DetalleViaje.js
+// src/components/DetalleViaje.jsx
 import React, { useState, useEffect } from "react";
 import {
   GoogleMap,
@@ -7,8 +7,18 @@ import {
   useJsApiLoader,
 } from "@react-google-maps/api";
 import { MAP_LIBS, MAP_LOADER_ID } from "../googleMapsConfig";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
+import { useUser } from "../contexts/UserContext";
+import { usePerfilViajeroCompleto } from "../hooks/usePerfilViajeroCompleto";
+import { abreviarUbicacion } from "../utils/ubicacion";
 import "./DetalleViaje.css";
 
 function haversineKm(a, b) {
@@ -18,27 +28,44 @@ function haversineKm(a, b) {
   const dLng = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 +
+  const h =
+    Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export default function DetalleViaje({ viaje, pasajeros, onClose, onReservar, loading }) {
+export default function DetalleViaje({
+  viaje,
+  pasajeros,
+  onClose,
+  onReservar,
+  loading: parentLoading,
+}) {
   const { isLoaded } = useJsApiLoader({
     id: MAP_LOADER_ID,
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: MAP_LIBS,
   });
 
+  const { usuario } = useUser();
+  const { perfil, cargando: cargandoPerfil, puedeReservar } = usePerfilViajeroCompleto(usuario?.uid);
+
   const [directions, setDirections] = useState(null);
   const [distanciaKm, setDistanciaKm] = useState(null);
   const [rutaError, setRutaError] = useState(null);
-  const [datosPasajero, setDatosPasajero] = useState(null);
+  const [datosConductor, setDatosConductor] = useState(null);
+  const [vehiculo, setVehiculo] = useState(null);
+  const [reputacionCalculada, setReputacionCalculada] = useState(null);
+  const [totalOpiniones, setTotalOpiniones] = useState(0);
+  const [reservando, setReservando] = useState(false);
+  // toggles
+  const [mostrarConductor, setMostrarConductor] = useState(false);
+  const [mostrarVehiculo, setMostrarVehiculo] = useState(false);
 
+  // cálculo ruta y distancia
   useEffect(() => {
     if (!isLoaded || !viaje) return;
     const { origenCoords, destinoCoords, origen, destino } = viaje;
-
     const service = new window.google.maps.DirectionsService();
     const req = (orig, dest) =>
       new Promise((resolve) =>
@@ -72,83 +99,135 @@ export default function DetalleViaje({ viaje, pasajeros, onClose, onReservar, lo
     }
   }, [isLoaded, viaje]);
 
+  // carga datos de conductor y vehículo
   useEffect(() => {
-    if (!viaje?.uidPasajero) return;
-    const fetchPasajero = async () => {
-      const ref = doc(db, "usuarios", viaje.uidPasajero);
+    if (!viaje?.conductor?.uid) return;
+    const fetchDatos = async () => {
+      const ref = doc(db, "usuarios", viaje.conductor.uid);
       const snap = await getDoc(ref);
-      if (snap.exists()) {
-        setDatosPasajero(snap.data());
-      }
+      if (snap.exists()) setDatosConductor(snap.data());
+
+      try {
+        const vehRef = collection(db, "usuarios", viaje.conductor.uid, "vehiculos");
+        const vehSnap = await getDocs(vehRef);
+        if (!vehSnap.empty) setVehiculo(vehSnap.docs[0].data());
+      } catch {}
+
+      try {
+        const calRef = collection(db, "usuarios", viaje.conductor.uid, "calificaciones");
+        const calSnap = await getDocs(calRef);
+        const notas = calSnap.docs.map(d => d.data()?.puntuacion).filter(n => typeof n === "number");
+        if (notas.length) {
+          const prom = notas.reduce((a, b) => a + b, 0) / notas.length;
+          setReputacionCalculada(prom);
+          setTotalOpiniones(notas.length);
+        }
+      } catch {}
     };
-    fetchPasajero();
-  }, [viaje?.uidPasajero]);
+    fetchDatos();
+  }, [viaje?.conductor?.uid]);
 
   if (!viaje) return null;
 
   const center = viaje.origenCoords || { lat: -34.6, lng: -58.38 };
   const precio = distanciaKm ? Math.round(distanciaKm * 70) : null;
 
+  const renderEstrellas = (rep) => {
+    const llenas = Math.floor(rep);
+    const mitad = rep % 1 >= 0.5;
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span>{"⭐".repeat(llenas)}{mitad ? "✬" : ""}</span>
+        <span style={{ color: "#888", marginLeft: 4, fontSize: 12 }}>{rep.toFixed(1)} · {totalOpiniones}</span>
+      </span>
+    );
+  };
+
+  const handleConfirmarReserva = async () => {
+    if (!usuario?.uid) return alert("Iniciá sesión para reservar.");
+    if (cargandoPerfil) return alert("Esperá a que cargue tu perfil.");
+    if (!puedeReservar) { alert("Completá tu perfil."); return window.location.href = "/perfil-viajero"; }
+    if (!viaje.id) return alert("ID de viaje faltante.");
+
+    setReservando(true);
+    try {
+      await addDoc(collection(db, "viajes", viaje.id, "reservas"), {
+        viajanteUid: usuario.uid,
+        fechaReserva: serverTimestamp(),
+        cantidadPasajeros: pasajeros || 1,
+        estadoReserva: "pendiente",
+        creadoPor: usuario.uid,
+      });
+      alert("Reserva creada.");
+    } catch (e) {
+      alert(e.code === "permission-denied" ? "Permiso denegado." : "Error al reservar.");
+    } finally {
+      setReservando(false);
+    }
+  };
+
   return (
     <div className="dv-overlay" onClick={onClose}>
-      <div className="dv-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="dv-modal" onClick={e => e.stopPropagation()}>
         <button className="dv-close" onClick={onClose}>×</button>
         <h2>Detalle de Viaje</h2>
 
         {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "300px" }}
-            center={center}
-            zoom={8}
-          >
+          <GoogleMap mapContainerStyle={{ width: "100%", height: "90vh" }} center={center} zoom={8}>
             {directions ? <DirectionsRenderer directions={directions} /> : <Marker position={center} />}
           </GoogleMap>
-        ) : (
-          <p>Cargando mapa…</p>
-        )}
+        ) : <p>Cargando mapa…</p>}
 
-        {rutaError && <p className="dv-error">{rutaError}</p>}
+        {rutaError && <p className="dv-error" style={{ margin: 0 }}>{rutaError}</p>}
 
-        <div className="dv-info">
-          <p><strong>Origen:</strong> {viaje.origen}</p>
-          <p><strong>Destino:</strong> {viaje.destino}</p>
+        <div className="dv-info" style={{ margin: "1rem 0" }}>
+          <p><strong>Origen:</strong> {abreviarUbicacion(viaje.origen)}</p>
+          <p><strong>Destino:</strong> {abreviarUbicacion(viaje.destino)}</p>
           <p><strong>Horario:</strong> {viaje.horario}</p>
-          <p><strong>Asientos disponibles:</strong> {viaje.asientos}</p>
-          {distanciaKm && (
-            <>
-              <p><strong>Distancia:</strong> {distanciaKm} km</p>
-              <p><strong>Precio estimado:</strong> ${precio}</p>
-            </>
-          )}
-          {pasajeros > viaje.asientos && (
-            <p className="dv-error">No hay suficientes asientos para {pasajeros} pasajeros.</p>
-          )}
+          <p><strong>Asientos:</strong> {viaje.asientos}</p>
+          {distanciaKm && <p><strong>Distancia:</strong> {distanciaKm} km</p>}
+          {distanciaKm && <p><strong>Precio:</strong> ${precio}</p>}
         </div>
 
-        {datosPasajero && (
-          <div className="mt-4 border-t pt-4">
-            <h3 className="font-bold mb-2">🧍 Datos del Viajero</h3>
-            <img src={datosPasajero.fotoPerfil} alt="foto perfil" className="w-16 h-16 rounded-full mb-2" />
-            <p><strong>Nombre:</strong> {datosPasajero.nombre}</p>
-            <p><strong>WhatsApp:</strong> {datosPasajero.whatsapp}</p>
-            <p><strong>Dirección:</strong> {datosPasajero.direccion}</p>
-            <p>
-              <strong>Reputación:</strong> {datosPasajero.reputacion ? (
-                <span>{"⭐".repeat(Math.round(datosPasajero.reputacion))} ({datosPasajero.reputacion.toFixed(1)})</span>
-              ) : (
-                "Sin calificaciones aún"
-              )}
-            </p>
+        {(datosConductor || vehiculo) && <hr />}
+
+        {/* Conductor como link */}
+        {datosConductor && (
+          <div className="dv-info">
+            <button onClick={() => setMostrarConductor(!mostrarConductor)} style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", padding: 0 }}>
+              🧑 {datosConductor.nombre || "Conductor"}
+            </button>
+            {mostrarConductor && (
+              <div style={{ marginTop: 8, paddingLeft: 16 }}>
+                {datosConductor.fotoPerfil && <img src={datosConductor.fotoPerfil} alt="Foto del conductor" style={{ width: 50, height: 50 , fontSize: "1.0rem", borderRadius: "50%", objectFit: "cover", marginBottom: 4 }} />}
+                {datosConductor.whatsapp && <p><strong>WhatsApp:</strong> {datosConductor.whatsapp}</p>}
+                {datosConductor.direccion && <p><strong>Dirección:</strong> {datosConductor.direccion}</p>}
+                <p><strong>Reputación:</strong> {reputacionCalculada !== null ? renderEstrellas(reputacionCalculada) : "Sin calificaciones"}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Vehículo como link */}
+        {vehiculo && (
+          <div className="dv-info">
+            <button onClick={() => setMostrarVehiculo(!mostrarVehiculo)} style={{ background: "none", fontSize: "1.0rem",border: "none", color: "#2563eb", cursor: "pointer", padding: 0 }}>
+              🚗 {vehiculo.marca || "Vehículo"} {vehiculo.modelo || ""}
+            </button>
+            {mostrarVehiculo && (
+              <div style={{ marginTop: 8, paddingLeft: 16 }}>
+                {vehiculo.imagenURL && <img src={vehiculo.imagenURL} alt="Foto del vehículo" style={{ width: 80, height: 60, borderRadius: 4, objectFit: "cover", marginBottom: 4 }} />}
+                <p><strong>Año:</strong> {vehiculo.anio || "-"}</p>
+                <p><strong>Patente:</strong> {vehiculo.patente || "-"}</p>
+              </div>
+            )}
           </div>
         )}
 
         <div className="dv-actions">
-          <button onClick={onClose} disabled={loading}>Volver</button>
-          <button
-            onClick={onReservar}
-            disabled={loading || viaje.asientos <= 0}
-          >
-            {loading ? "Reservando..." : viaje.asientos > 0 ? "Confirmar Reserva" : "Sin asientos"}
+          <button onClick={onClose} disabled={parentLoading || reservando}>Volver</button>
+          <button onClick={handleConfirmarReserva} disabled={parentLoading || reservando || viaje.asientos < 1}>
+            {reservando ? "Reservando..." : viaje.asientos > 0 ? "Confirmar Reserva" : "Sin asientos"}
           </button>
         </div>
       </div>

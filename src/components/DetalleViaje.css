@@ -14,20 +14,25 @@
 
 /* --- Modal ------------------------------------------------------------- */
 .dv-modal {
+  position: relative;            /* 🔧 Necesario para que .dv-close (position:absolute) quede anclado a este contenedor */
   background: #ffffff;
-  border-radius: 1rem;              /* extra‑rounded corners */
+  border-radius: 1rem;           /* extra-rounded corners */
   width: min(92vw, 560px);
-  max-height: 90vh;
-  overflow: hidden;                /* clip map corners */
+  max-height: 90vh;              /* limita la altura al 90% del viewport */
+  overflow-y: auto;              /* 🔧 permite scroll vertical interno cuando el contenido excede max-height */
+  overflow-x: hidden;            /* oculta cualquier desbordamiento horizontal */
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
 }
 
+/* Elimina overflow:hidden original y lo reemplaza por overflow-y:auto + overflow-x:hidden */
+
+/* --- Close button ------------------------------------------------------ */
 .dv-close {
-  position: absolute;
-  top: 10px;
-  right: 14px;
+  position: absolute;            /* usa el position:relative de .dv-modal para posicionarse */
+  top: 10px;                     /* ajusta la separación superior */
+  right: 14px;                   /* ajusta la separación derecha */
   border: none;
   background: transparent;
   font-size: 1.5rem;
@@ -35,8 +40,12 @@
   cursor: pointer;
   transition: transform 0.15s ease;
 }
-.dv-close:hover { transform: scale(1.15); }
+.dv-close:hover {
+  transform: scale(1.15);
+  color: #333;                   /* opcional: oscurece al pasar el mouse */
+}
 
+/* --- Header ------------------------------------------------------------ */
 h2 {
   margin: 0;
   padding: 1rem 1.5rem 0.5rem;
@@ -57,7 +66,9 @@ h2 {
   color: #444;
   font-size: 0.95rem;
 }
-.dv-modal p strong { color: #222; }
+.dv-modal p strong {
+  color: #222;
+}
 
 /* Route / distance error message */
 .dv-modal p[style*="color: #e63946"] {
@@ -87,10 +98,12 @@ h2 {
   background: #e0e0e0;
   color: #333;
 }
-.dv-actions button:first-child:hover { background: #d5d5d5; }
+.dv-actions button:first-child:hover {
+  background: #d5d5d5;
+}
 
 .dv-actions button:last-child {
-  background: #3b82f6;   /* Tailwind blue‑500 */
+  background: #3b82f6;   /* Tailwind blue-500 */
   color: #fff;
 }
 .dv-actions button:last-child:disabled {
@@ -98,11 +111,12 @@ h2 {
   cursor: not-allowed;
 }
 .dv-actions button:last-child:not(:disabled):hover {
-  background: #2563eb;   /* blue‑600 */
+  background: #2563eb;   /* blue-600 */
 }
 
+/* --- Responsive tweaks ------------------------------------------------- */
 @media (max-width: 480px) {
   .dv-modal {
-    width: 95vw;
+    width: 95vw;               /* ajusta ancho en pantallas muy chicas */
   }
 }
