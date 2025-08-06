@@ -10,7 +10,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Endpoint de prueba para verificar que el servidor esté arriba
-app.get('/', (req, res) => res.send('<link rel="icon" href="/favicon.png" />'));
 app.get('/', (req, res) => res.send('🚀 Backend de MercadoPago corriendo'));
 
 // Inicializar cliente de MercadoPago
