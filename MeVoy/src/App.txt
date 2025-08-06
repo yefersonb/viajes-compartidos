@@ -1,0 +1,7 @@
+import PruebaMapa from "./PruebaMapa";
+
+function App() {
+  return <PruebaMapa />;
+}
+
+export default App;

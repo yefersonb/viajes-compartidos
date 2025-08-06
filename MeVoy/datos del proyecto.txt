@@ -1,0 +1,17 @@
+mi-app/
+├── public/
+│   └── index.html
+├── src/
+│   ├── components/
+│   │   ├── NuevoVehiculo.js      ← formulario con <input type="file">
+│   │   └── VehiculosConductor.js  ← lógica de subida
+│   ├── firebase.js                ← inicialización de Firebase
+│   ├── App.js
+│   └── index.js
+├── .env.local                     ← variables de entorno
+├── package.json
+└── README.md
+
+cmd
+desde la ubicacion del proyecto
+npm start 
