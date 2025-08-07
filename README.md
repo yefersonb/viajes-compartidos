@@ -1,3 +1,5 @@
+#Clean-up Ongoing! Expect issues
+---
 # 🚗 Viajes Compartidos
 
 Plataforma colaborativa para compartir viajes entre personas. Inspirado en BlaBlaCar, esta app permite a los usuarios ofrecer y encontrar viajes cercanos.
