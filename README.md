@@ -1,6 +1,5 @@
 # ⚠️ Clean-up Ongoing! Expect issues ⚠️
 ---
-![screenshot](MeVoy/src/assets/logo_mevoy_nobg_dark.png)
 # 🚗 Viajes Compartidos
 
 Plataforma colaborativa para compartir viajes entre personas. Inspirado en BlaBlaCar, esta app permite a los usuarios ofrecer y encontrar viajes cercanos.
@@ -46,3 +45,5 @@ npm run build: genera la carpeta build/ con los archivos optimizados.
 firebase deploy: sube esa carpeta build/ al servidor de Firebase./////
 
 LISTO SE SUBRE A LA NUBE MEVOY.AR
+
+![screenshot](MeVoy/src/assets/logo_mevoy_nobg_dark.png)
