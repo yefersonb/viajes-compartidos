@@ -6,6 +6,13 @@ import React from "react";
  * - children
  * - variant: "verificado" | "viajes" | "rapido" | string
  */
+
+/*
+  ToDo:
+    * Implement as actual badges, using icons and better styles.
+    * May depend on CozyGlow or similar for consistent design.
+    * Tho... that might not be neccessary, unless dark/light themes become an issue.
+*/
 const variantMap = {
   verificado: { bg: "#ecfdf5", color: "#047857" },
   viajes: { bg: "#f3f4f6", color: "#1f2937" },

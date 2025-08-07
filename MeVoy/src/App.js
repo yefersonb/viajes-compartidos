@@ -17,8 +17,9 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import "./App.css";
 
-// Importar estilos de la librería CozyGlow
+// Importar estilos desde la librería CozyGlow
 import "./components/cozyglow/css/cozyglow.css";
+//
 
 import Login from "./components/Login";
 import SeleccionarRol from "./components/SeleccionarRol";
