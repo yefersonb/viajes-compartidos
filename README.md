@@ -1,5 +1,6 @@
-#Clean-up Ongoing! Expect issues
+# ⚠️ Clean-up Ongoing! Expect issues ⚠️
 ---
+![screenshot](MeVoy/src/assets/logo_mevoy_nobg_dark.png)
 # 🚗 Viajes Compartidos
 
 Plataforma colaborativa para compartir viajes entre personas. Inspirado en BlaBlaCar, esta app permite a los usuarios ofrecer y encontrar viajes cercanos.
