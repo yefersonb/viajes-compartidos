@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "./assets/logomevoy.png"; // Asegurate que el archivo esté en src/assets
+import logo from "../assets/logomevoy.png"; // Optimization gere is a pain!
 
 export default function Header() {
   return (
@@ -10,3 +10,7 @@ export default function Header() {
   );
 }
 
+// Alternative simpler version:
+// export default function Header() {
+//   return <img src="/assets/logomevoy.png" alt="MeVoy Logo" />;
+// }

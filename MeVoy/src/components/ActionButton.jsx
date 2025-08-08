@@ -16,24 +16,24 @@ const base = {
 
 const variants = {
   primary: {
-    background: '#2563eb',
-    color: '#fff',
-    border: '1px solid #2563eb',
+    background: 'var(--color-primary)',
+    color: 'var(--color-on-primary)',
+    border: '1px solid var(--color-primary)',
   },
   neutral: {
-    background: '#f1f5f9',
-    color: '#2563eb',
-    border: '1px solid #2563eb',
+    background: 'var(--color-surface)',
+    color: 'var(--color-on-surface)',
+    border: '1px solid var(--color-surface)',
   },
   destructive: {
-    background: '#ffe3e3',
-    color: '#c0392b',
-    border: '1px solid #c0392b',
+    background: 'var(--color-text-primary)',
+    color: 'var(--color-danger)',
+    border: '1px solid var(--color-danger)',
   },
   success: {
-    background: '#22c55e',
-    color: '#fff',
-    border: '1px solid #22c55e',
+    background: 'var(--color-success)',
+    color: 'var(--color-on-success)',
+    border: '1px solid var(--color-success)',
   },
 };
 

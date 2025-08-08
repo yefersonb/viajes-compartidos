@@ -57,9 +57,8 @@ export default function Login() {
     }
   };
 
-  // This shouldn't be neccessary... this component is only called if the user is not logged in
-  // By the App.js logic
-  // if (usuario) return null;
+  // This shouldn't be neccessary... this component is only called if the user is not logged in by the App.js logic
+  if (usuario) return null;
 
   /*
     This section renders the login interface.
@@ -83,7 +82,15 @@ export default function Login() {
       
       <GLoginButton onClick={loginConGoogle} />
 
-      { /* ToDo: Enhance the look of this Input element */ 
+      {
+        /*
+          ToDo:
+            * Enhance the look of this Input element
+            * Variable names are... not great.
+            * This should probably be moved to a separate component
+            * GPT: Consider using a form validation library like Formik or React Hook Form
+        */
+      }
       {pidiendoWhatsapp && (
         <div style={{ marginTop: 20 }}>
           <h4>Completá tu WhatsApp para continuar:</h4>
