@@ -21,8 +21,8 @@ export default function GoogleLoginButton({ onClick }) {
             <path fill="none" d="M0 0h48v48H0z" />
           </svg>
         </div>
-        <span className="gsi-material-button-contents">Iniciar sesión con Google</span>
-        <span style={{ display: 'none' }}>Iniciar sesión con Google</span>
+        <span className="gsi-material-button-contents">Continuar con Google</span>
+        <span style={{ display: 'none' }}>Continuar con Google</span>
       </div>
     </button>
   );

@@ -1,10 +1,11 @@
 :root {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary: #41b18f;
   --bg: #f9fafb;
   --card-bg: #ffffff;
   --radius: 0.75rem;
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
   --text: #1f2937;
   --muted: #6b7280;
   --hover-bg: #e0e7ff;
@@ -14,13 +15,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;    
+    --secondary: #3bf6be;
     --bg: #0f172a;
     --card-bg: #1f2a44;
     --text: #e2e8f0;
     --muted: #94a3b8;
     --hover-bg: rgba(255, 255, 255, 0.08);
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
   }
 }
 

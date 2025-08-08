@@ -3,10 +3,14 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useUser } from "../contexts/UserContext";
+
+// UI Stuff
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext"; // This helps us detect the current theme
 import GLoginButton from "./google/GLoginButton";
 
 export default function Login() {
   const { usuario, setUsuario } = useUser();
+  const { isDark } = useTheme(); // <-- use the context
   const [whatsapp, setWhatsapp] = useState("");
   const [pidiendoWhatsapp, setPidiendoWhatsapp] = useState(false);
   const [userTemp, setUserTemp] = useState(null);
@@ -53,19 +57,33 @@ export default function Login() {
     }
   };
 
-  if (usuario) return null;
+  // This shouldn't be neccessary... this component is only called if the user is not logged in
+  // By the App.js logic
+  // if (usuario) return null;
 
+  /*
+    This section renders the login interface.
+    If the user needs to log in the Login.js will return this rendering agent to React
+    ToDo:
+    * The logo is now a plain image, and its hardcoded to be in dark mode.
+    * Consider using a CSS variable or prop to handle dark/light themes.
+  */
   return (
     <div>
       <div style={{ textAlign: "center" }}>
         <img
-          src="/assets/logo_mevoy_nobg_dark.png"
+          src={isDark
+            ? "/assets/logo_mevoy_nobg_dark.png"
+            : "/assets/logo_mevoy_nobg.png"}
           alt="[Logo de MeVoy]"
           style={{ marginTop: "5rem", width: "10rem" }}
         />
-        <div style={{ marginTop: "2rem", opacity: 0.5 }}> Iniciá sesión </div>
+        <div style={{ margin: "2rem", opacity: 0.5 }}> Iniciá sesión </div>
       </div>
+      
       <GLoginButton onClick={loginConGoogle} />
+
+      { /* ToDo: Enhance the look of this Input element */ 
       {pidiendoWhatsapp && (
         <div style={{ marginTop: 20 }}>
           <h4>Completá tu WhatsApp para continuar:</h4>

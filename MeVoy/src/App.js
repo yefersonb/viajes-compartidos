@@ -1,5 +1,6 @@
 // src/App.js — Componente principal de la aplicación
 import React, { useState, useEffect } from "react";
+
 import {
   collection,
   doc,
@@ -15,12 +16,19 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import "./App.css";
 
-// Importar estilos desde la librería CozyGlow
+
+// Importar estilos
+import { ThemeProvider } from "./contexts/ThemeContext"; // adjust path if needed
+import "./App.css";
 import "./components/cozyglow/css/cozyglow.css";
 //
 
+/* Componentes de CozyGlow */
+import CozySpinner from "./components/cozyglow/components/Spinners/CozySpinner/CozySpinner";
+
+
+// Importar componentes
 import Login from "./components/Login";
 import SeleccionarRol from "./components/SeleccionarRol";
 import PerfilConductorV2 from "./components/PerfilConductorV2Enhanced";
@@ -34,7 +42,7 @@ import VerificacionVehiculosAdmin from "./components/vehicleVerification/Verific
 
 const modalStyles = {}; // Puedes agregar estilos si lo deseas
 
-export default function App() {
+function App() {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rol, setRol] = useState(null);
@@ -130,86 +138,99 @@ export default function App() {
     }
   };
 
-  if (loading) return <p>Cargando...</p>;
-  if (!usuario) return <Login onLogin={setUsuario} />;
+  if (loading) return (
+    <ThemeProvider>
+        <CozySpinner />
+    </ThemeProvider>
+  );
+
+  if (!usuario || true) return (
+    <ThemeProvider>
+      <Login onLogin={setUsuario} />
+    </ThemeProvider>
+  );
 
   return (
-    <div className="app-container">
-      <Header />
-      <div className="user-header">
-        <p>
-          Hola, {usuario.displayName || usuario.email} ({rol})
-        </p>
-        <div className="user-actions">
-          <button onClick={cerrarSesion} className="link-btn">
-            Cerrar sesión
-          </button>
-          <button
-            onClick={() => setMostrarSelectorRol(true)}
-            className="link-btn"
-          >
-            Cambiar rol
-          </button>
-          {mostrarSelectorRol && (
-            <button
-              className="link-btn"
-              onClick={() => setMostrarSelectorRol(false)}
-            >
-              ×
+    <ThemeProvider>
+      <div className="app-container">
+        <Header />
+        <div className="user-header">
+          <p>
+            Hola, {usuario.displayName || usuario.email} ({rol})
+          </p>
+          <div className="user-actions">
+            <button onClick={cerrarSesion} className="link-btn">
+              Cerrar sesión
             </button>
-          )}
-        </div>
-      </div>
-
-      {mostrarSelectorRol && (
-        <div style={modalStyles.overlay}>
-          <div style={modalStyles.content}>
-            <SeleccionarRol
-              usuario={usuario}
-              setRol={(r) => {
-                setRol(r);
-                localStorage.setItem("rolSeleccionado", r);
-                setMostrarSelectorRol(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {rol === "conductor" ? (
-        <PerfilConductorV2 viajes={viajes} reservas={reservas} />
-      ) : rol === "viajero" ? (
-        <div>
-          {/* Perfil del viajero */}
-          <PerfilViajeroPage perfilCompleto={perfilCompleto} />
-
-          {/* Buscador / viajes publicados debajo si querés */}
-          <div style={{ marginTop: 32 }}>
-            <h3>Buscar viajes</h3>
-            <div
-              style={{
-                backgroundColor: "#f3f4f6",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                marginTop: "1rem",
-              }}
+            <button
+              onClick={() => setMostrarSelectorRol(true)}
+              className="link-btn"
             >
-              <BuscadorViajes
-                viajes={viajes}
-                usuario={usuario}
-                onReservar={reservarViaje}
-              />
-            </div>
-            {viajeReservado && (
-              <div style={{ marginTop: 16 }}>
-                <PagoButton viaje={viajeReservado} usuario={usuario} />
-              </div>
+              Cambiar rol
+            </button>
+            {mostrarSelectorRol && (
+              <button
+                className="link-btn"
+                onClick={() => setMostrarSelectorRol(false)}
+              >
+                ×
+              </button>
             )}
           </div>
         </div>
-      ) : (
-        <VerificacionVehiculosAdmin />
-      )}
-    </div>
+
+        {mostrarSelectorRol && (
+          <div style={modalStyles.overlay}>
+            <div style={modalStyles.content}>
+              <SeleccionarRol
+                usuario={usuario}
+                setRol={(r) => {
+                  setRol(r);
+                  localStorage.setItem("rolSeleccionado", r);
+                  setMostrarSelectorRol(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {rol === "conductor" ? (
+          <PerfilConductorV2 viajes={viajes} reservas={reservas} />
+        ) : rol === "viajero" ? (
+          <div>
+            {/* Perfil del viajero */}
+            <PerfilViajeroPage perfilCompleto={perfilCompleto} />
+
+            {/* Buscador / viajes publicados debajo si querés */}
+            <div style={{ marginTop: 32 }}>
+              <h3>Buscar viajes</h3>
+              <div
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  padding: "1rem",
+                  borderRadius: "0.5rem",
+                  marginTop: "1rem",
+                }}
+              >
+                <BuscadorViajes
+                  viajes={viajes}
+                  usuario={usuario}
+                  onReservar={reservarViaje}
+                />
+              </div>
+              {viajeReservado && (
+                <div style={{ marginTop: 16 }}>
+                  <PagoButton viaje={viajeReservado} usuario={usuario} />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <VerificacionVehiculosAdmin />
+        )}
+      </div>
+    </ThemeProvider>
   );
 }
+
+export default App;
