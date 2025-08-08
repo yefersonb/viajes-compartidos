@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useUser } from "../contexts/UserContext";
+import GLoginButton from "./google/GLoginButton";
 
 export default function Login() {
   const { usuario, setUsuario } = useUser();
@@ -56,7 +57,15 @@ export default function Login() {
 
   return (
     <div>
-      <button onClick={loginConGoogle}>Iniciar sesión con Google</button>
+      <div style={{ textAlign: "center" }}>
+        <img
+          src="/assets/logo_mevoy_nobg_dark.png"
+          alt="[Logo de MeVoy]"
+          style={{ marginTop: "5rem", width: "10rem" }}
+        />
+        <div style={{ marginTop: "2rem", opacity: 0.5 }}> Iniciá sesión </div>
+      </div>
+      <GLoginButton onClick={loginConGoogle} />
       {pidiendoWhatsapp && (
         <div style={{ marginTop: 20 }}>
           <h4>Completá tu WhatsApp para continuar:</h4>
