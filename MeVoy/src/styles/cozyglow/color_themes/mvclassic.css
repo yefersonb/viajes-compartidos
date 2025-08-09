@@ -5,10 +5,10 @@
   --color-blue-100: #d9e4f4;
   --color-blue-200: #b3caeb;
   --color-blue-300: #8daee0;
-  --color-blue-400: #6a93d4;
+  --color-blue-400: #6a93d4; 
   --color-blue-500: #4a7bd1; 
-  --color-blue-600: #3c66ad;
-  --color-blue-700: #2f5289; /* Primary */
+  --color-blue-600: #3c66ad; /* Primary */
+  --color-blue-700: #2f5289; 
   --color-blue-800: #223d64;
   --color-blue-900: #162a44;
 
@@ -42,11 +42,11 @@
   --color-danger-500: #c46363;
   --color-info-500: #5b8fbf;
 
-  /* === Light Theme Semantic === */
-  --color-primary: var(--color-blue-600);
-  --color-primary-hover: var(--color-blue-800);
-  --color-secondary: var(--color-green-600);
-  --color-secondary-hover: var(--color-green-800);
+  /* === Light Theme Semantic === */ 
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-100);
+  --color-secondary: var(--color-green-500);
+  --color-secondary-hover: var(--color-green-100);
 
   --color-success: var(--color-success-500);
   --color-warning: var(--color-warning-500);
@@ -73,7 +73,7 @@
   --color-selection: var(--color-blue-100);
 }
 
-/* === Dark Theme === */
+/* === Dark Theme === */ /* Dark theme is currently not supported */
 @media (prefers-color-scheme: dark) {
   /*:root {
     --color-surface: #111827;
