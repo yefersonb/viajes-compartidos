@@ -75,7 +75,7 @@
 
 /* === Dark Theme === */
 @media (prefers-color-scheme: dark) {
-  :root {
+  /*:root {
     --color-surface: #111827;
     --color-surface-alt: #1b2537;
     --color-surface-hover: #2b3650;
@@ -94,5 +94,5 @@
 
     --color-focus-ring: #58d5b2;
     --color-selection: #3a5b8f;
-  }
+  }*/
 }

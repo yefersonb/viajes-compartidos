@@ -68,18 +68,15 @@ export default function Login() {
     * Consider using a CSS variable or prop to handle dark/light themes.
   */
   return (
-    <div>
-      <div style={{ textAlign: "center" }}>
-        <img
-          src={isDark
-            ? "/assets/logo_mevoy_nobg_dark.png"
-            : "/assets/logo_mevoy_nobg.png"}
-          alt="[Logo de MeVoy]"
-          style={{ marginTop: "5rem", width: "10rem" }}
-        />
-        <div style={{ margin: "2rem", opacity: 0.5 }}> Iniciá sesión </div>
-      </div>
-      
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2rem", maxWidth: "300px", margin: "auto" }}>
+      <img
+        src={isDark
+          ? "/assets/logo_mevoy_nobg_dark.png"
+          : "/assets/logo_mevoy_nobg.png"}
+        alt="[Logo de MeVoy]"
+        style={{ marginTop: "5rem", width: "100%" }}
+      />
+      <div style={{ margin: "2rem", opacity: 0.5 }}> Iniciá sesión </div>      
       <GLoginButton onClick={loginConGoogle} />
 
       {

@@ -22,6 +22,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ThemeProvider } from "./contexts/ThemeContext"; // adjust path if needed
 import "./App.css";
 import "./styles/cozyglow/color_themes/mvclassic.css";
+import "./styles/cozyglow/cozyglow.css";
 //
 
 /* Componentes de CozyGlow */
