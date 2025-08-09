@@ -22,18 +22,25 @@ body {
     flex-direction: column;
     align-items: center;
     color: var(--text);
-    background-color: var(--bg-darker);
+    /*background-color: var(--bg-darker);*/
     font-family: var(--font-stack);
+
+    /* A gradient header (isn't working well with the current pallete) */
+    /*background-image: linear-gradient(to bottom, var(--color-primary) 4rem, white);
+    background-repeat: no-repeat;
+    background-size: 100% 8rem;    */
 }
 
 .header {
     background-color: var(--color-surface);
-    color: var(--text-on-surface);
-    padding: 1rem;
+    color: var(--color-text-primary);
+    padding: 0.8rem;
     width: 100%;
-    height: 4rem;
+    height: 3.5rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    justify-content: space-between;    
 }
+    .header.shaded{
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
