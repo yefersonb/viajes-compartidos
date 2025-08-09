@@ -5,6 +5,7 @@ import { useTheme } from "../../../contexts/ThemeContext"; // Adjust the path as
 
 // ToDo: This huge path to all depencies is HORRIBLE! — We need to find a more streamlined way to import this
 //       or use a more modular approach to our components.
+// 
 export default function StandardLogo() {
   return (
     <div className={styles.logoContainer}>

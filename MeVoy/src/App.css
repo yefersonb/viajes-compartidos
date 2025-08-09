@@ -1,3 +1,11 @@
+
+/*
+  *OUTDATED COLORS* - OVERRIDEN BY COZYGLOW
+  ToDo: Update all references to these colors in the codebase to point to CozyGlow's standard variables.
+
+  Dark Modo is GONE from here, use CozyGlow's color themes instead.
+*/
+
 :root {
   --primary: #3b82f6;
   --primary-hover: #2563eb;
@@ -13,42 +21,12 @@
   --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;    
-    --secondary: #3bf6be;
-    --bg: #0f172a;
-    --card-bg: #1f2a44;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --hover-bg: rgba(255, 255, 255, 0.08);
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: var(--font-stack);
-  background-color: var(--bg);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
-}
+/* Core App stuff //////////////////////////////////////////////////////////////////*/
 
 .app-container {
-  max-width: 640px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px; /* This is importnt-ish */
 }
 
 /* Header / saludo y acciones */
