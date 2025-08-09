@@ -21,7 +21,8 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 // Importar estilos
 import { ThemeProvider } from "./contexts/ThemeContext"; // adjust path if needed
 import "./App.css";
-import "./components/cozyglow/css/cozyglow.css";
+import "./styles/cozyglow/color_themes/mvclassic.css";
+import "./styles/cozyglow/cozyglow.css";
 //
 
 /* Componentes de CozyGlow */
@@ -36,7 +37,8 @@ import VehiculosConductor from "./components/VehiculosConductor";
 import BuscadorViajes from "./components/BuscadorViajes";
 import PerfilViajeroPage from "./components/PerfilViajeroPage";
 import PagoButton from "./components/PagoButton";
-import Header from "./Header";
+import Header from "./components/Header";
+//import Header from "./Header";
 import ReservasRecibidas from "./components/ReservasRecibidas";
 import VerificacionVehiculosAdmin from "./components/vehicleVerification/VerificacionVehiculosAdmin";
 
@@ -144,7 +146,7 @@ function App() {
     </ThemeProvider>
   );
 
-  if (!usuario || true) return (
+  if (!usuario) return (
     <ThemeProvider>
       <Login onLogin={setUsuario} />
     </ThemeProvider>

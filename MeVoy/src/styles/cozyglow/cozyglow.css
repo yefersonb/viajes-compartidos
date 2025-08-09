@@ -1,0 +1,46 @@
+/*
+    CozyGlow CSS Variables
+    ======================
+    This includes color schemes engineered for light and dark modes,
+    as well as some base styles for body and html elements.
+*/
+
+/* Classic nifty trick, helps with padding auto-sizing. */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    min-height: 200px;
+    height: 90%;
+    margin: 0;
+}
+
+body {
+    margin: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text);
+    /*background-color: var(--bg-darker);*/
+    font-family: var(--font-stack);
+
+    /* A gradient header (isn't working well with the current pallete) */
+    /*background-image: linear-gradient(to bottom, var(--color-primary) 4rem, white);
+    background-repeat: no-repeat;
+    background-size: 100% 8rem;    */
+}
+
+.header {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 0.8rem;
+    width: 100%;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;    
+}
+    .header.shaded{
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }

@@ -1,10 +1,13 @@
 import React from "react";
 
 /**
+ * ToDo: This...? This needs a LOT of work.
+ * 
  * Barra de acciones Editar/Guardar/Cancelar, separada y fija en desktop.
  * Props:
  * - editMode, onEdit, onSave, onCancel, guardado
  */
+
 export default function ActionBar({
   editMode,
   onEdit,
