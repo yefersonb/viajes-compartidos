@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useUser } from "../contexts/UserContext";
+import logo from "../assets/logo/logotype_light.png"; // Logo image
 
 // UI Stuff
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext"; // This helps us detect the current theme
@@ -69,12 +70,18 @@ export default function Login() {
   */
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2rem", maxWidth: "300px", margin: "auto" }}>
+      {/* Disabled until dark mode is supported again
       <img
         src={isDark
           ? "/assets/logo_mevoy_nobg_dark.png"
           : "/assets/logo_mevoy_nobg.png"}
         alt="[Logo de MeVoy]"
         style={{ marginTop: "5rem", width: "100%" }}
+      /> */}
+      <img
+        src={logo}
+        alt="[Logo de MeVoy]"
+        style={{ marginTop: "6rem", marginBottom: "3rem", width: "70%" }}
       />
       <div style={{ margin: "2rem", opacity: 0.5 }}> Iniciá sesión </div>      
       <GLoginButton onClick={loginConGoogle} />
