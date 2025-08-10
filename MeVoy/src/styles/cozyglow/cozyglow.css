@@ -31,6 +31,16 @@ body {
     background-size: 100% 8rem;    */
 }
 
+/*
+    Modifiers, utilities
+*/
+.hidden {
+    display: none !important;
+}
+
+/*
+    Elements
+*/
 .header {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
@@ -39,8 +49,70 @@ body {
     height: 3.5rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;    
+    gap: 0.5rem; 
 }
     .header.shaded{
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
+.button {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+    .button.neutral {
+        background-color: var(--color-surface-alt);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+    }
+
+    .button.pill {
+        border-radius: 9999px;
+    }
+
+    .button.borderless {
+        border: none;
+    }
+
+    .button:hover {
+        background-color: var(--color-primary-hover);
+    }
+
+    
+
+.arrow {
+    width: 0; 
+    height: 0; 
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent; 
+    border-left: 6px solid var(--color-primary);
+    margin-right: 0.5rem;
+}
+    .arrow.animated {
+        transition: transform 0.16s ease;
+    }
+
+    .arrow.pointing-down {
+        transform: rotate(90deg);
+    }
+
+    .arrow.pointing-up {
+        transform: rotate(-90deg);
+    }
+
+    .arrow.pointing-right {
+        transform: rotate(0deg);
+    }
+
+    .arrow.pointing-left {
+        transform: rotate(180deg);
+    }
+
+.row {
+    display: flex;
+    align-items: center;
+}
