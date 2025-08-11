@@ -1,17 +1,17 @@
-// src/index.js
 import React from "react";
-import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { UserProvider } from "./contexts/UserContext"; // Ajuste: importa el UserProvider exportado
-import "./index.css";
 
-const container = document.getElementById("root");
-const root = createRoot(container);
+// ⬇️ importa tu provider del contexto de usuario
+import { UserProvider } from "./contexts/UserContext"; // si falla, probá: import UserProvider from "./contexts/UserContext";
 
-root.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <BrowserRouter>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

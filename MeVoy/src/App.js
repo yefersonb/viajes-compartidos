@@ -1,49 +1,42 @@
-// src/App.js — Componente principal de la aplicación
+// src/App.js — App limpia (sin rutas nuevas)
 import React, { useState, useEffect } from "react";
-
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  increment,
-  onSnapshot,
-  query,
-  orderBy,
-  getDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
+import { collection, doc, addDoc, updateDoc, increment, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
-import "./App.css";
 
-import "./styles/cozyglow/cozyglow.css";                // Import cozyglow base
-import "./styles/cozyglow/primitives.css";              // Import cozyglow color primitives
-// import "./styles/cozyglow/color_themes/mvclassic.css";  // Import cozyglow color theme
-import "./styles/cozyglow/color_themes/natura.css";  // Import cozyglow color theme
-//
+// ✅ Rutas correctas para tus estilos CozyGlow
+import "./styles/cozyglow/cozyglow.css";
+import "./styles/cozyglow/color_themes/mvclassic.css";
 
-import CozySpinner from "./components/cozyglow/components/Spinners/CozySpinner/CozySpinner";
-
+// UI
 import Login from "./components/Login";
-import PerfilConductorV2 from "./components/PerfilConductorV2Enhanced";
-import BuscadorViajes from "./components/BuscadorViajes";
-import PerfilViajeroPage from "./components/PerfilViajeroPage";
-import PagoButton from "./components/PagoButton";
 import Header from "./components/Header";
 import VerificacionVehiculosAdmin from "./components/vehicleVerification/VerificacionVehiculosAdmin";
 
-function App() {
+// Dashboards
+import ConductorDashboard from "./components/ConductorDashboard";
+import ViajeroDashboard from "./components/ViajeroDashboard";
+
+// Hooks
+import useConductorData from "./hooks/useConductorData";
+import usePerfilViajeroMinimo from "./hooks/usePerfilViajeroMinimo";
+
+export default function App() {
   const [usuario, setUsuario] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingAuth, setLoadingAuth] = useState(true);
   const [rol, setRol] = useState(null);
-  const [viajes, setViajes] = useState([]);
-  const [reservas, setReservas] = useState({});
-  const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [viajeReservado, setViajeReservado] = useState(null);
+
+  // Perfil mínimo del viajero
+  const { perfilCompleto, loadingPerfil } = usePerfilViajeroMinimo(
+    usuario,
+    rol === "viajero"
+  );
+
+  // Datos del conductor (suscripción en vivo)
+  const { viajes, reservas } = useConductorData(usuario, rol === "conductor");
 
   // Auth + rol inicial
   useEffect(() => {
@@ -60,11 +53,7 @@ function App() {
             setRol(rolDb);
             localStorage.setItem("rolSeleccionado", rolDb);
           } else {
-            await setDoc(
-              doc(db, "usuarios", user.uid),
-              { rol: "viajero" },
-              { merge: true }
-            );
+            await setDoc(doc(db, "usuarios", user.uid), { rol: "viajero" }, { merge: true });
             setRol("viajero");
             localStorage.setItem("rolSeleccionado", "viajero");
           }
@@ -73,65 +62,17 @@ function App() {
         setRol(null);
         localStorage.removeItem("rolSeleccionado");
       }
-      setLoading(false);
+      setLoadingAuth(false);
     });
     return unsub;
   }, []);
-
-  // Completar perfil mínimo para viajero
-  useEffect(() => {
-    if (!usuario || rol !== "viajero") return;
-    (async () => {
-      const ref = doc(db, "usuarios", usuario.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        const tieneNombre = data.nombre || usuario.displayName;
-        const tieneWhatsapp = data.whatsapp || usuario.phoneNumber;
-        const tieneDireccion = !!data.direccion;
-        setPerfilCompleto(!!(tieneNombre && tieneWhatsapp && tieneDireccion));
-      } else {
-        await setDoc(ref, {
-          rol: "viajero",
-          nombre: usuario.displayName || usuario.email,
-          fotoPerfil: usuario.photoURL || "",
-          fechaRegistro: new Date(),
-        });
-        setPerfilCompleto(false);
-      }
-    })();
-  }, [usuario, rol]);
-
-  // Cargar viajes y reservas si es conductor
-  useEffect(() => {
-    if (!usuario || rol !== "conductor") return;
-    const q = query(collection(db, "viajes"), orderBy("horario", "asc"));
-    const unsubV = onSnapshot(q, async (snap) => {
-      const misViajes = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((v) => v.conductor?.uid === usuario.uid);
-      setViajes(misViajes);
-
-      const temp = {};
-      for (const v of misViajes) {
-        const rs = await getDocs(collection(db, "viajes", v.id, "reservas"));
-        temp[v.id] = rs.docs.map((r) => r.data());
-      }
-      setReservas(temp);
-    });
-    return () => unsubV();
-  }, [usuario, rol]);
 
   // Toggle de rol (Header)
   const handleToggleRol = async () => {
     if (!usuario) return;
     const nuevoRol = rol === "viajero" ? "conductor" : "viajero";
     try {
-      await setDoc(
-        doc(db, "usuarios", usuario.uid),
-        { rol: nuevoRol },
-        { merge: true }
-      );
+      await setDoc(doc(db, "usuarios", usuario.uid), { rol: nuevoRol }, { merge: true });
       localStorage.setItem("rolSeleccionado", nuevoRol);
       setRol(nuevoRol);
     } catch (error) {
@@ -139,7 +80,7 @@ function App() {
     }
   };
 
-  // Reservar viaje (viajero)
+  // Reservar viaje (modo viajero)
   const reservarViaje = async (id) => {
     try {
       const data = {
@@ -150,7 +91,10 @@ function App() {
       };
       await addDoc(collection(db, "viajes", id, "reservas"), data);
       await updateDoc(doc(db, "viajes", id), { asientos: increment(-1) });
-      setViajeReservado(viajes.find((v) => v.id === id));
+
+      const vSnap = await getDoc(doc(db, "viajes", id));
+      if (vSnap.exists()) setViajeReservado({ id, ...vSnap.data() });
+
       alert("¡Reserva exitosa! Ahora podés pagar el viaje.");
     } catch (e) {
       console.error(e);
@@ -158,7 +102,22 @@ function App() {
     }
   };
 
-  if (loading) {
+  // Loaders / login
+  if (loadingAuth) {
+    return (
+      <ThemeProvider>
+        <CozySpinner />
+      </ThemeProvider>
+    );
+  }
+  if (!usuario) {
+    return (
+      <ThemeProvider>
+        <Login />
+      </ThemeProvider>
+    );
+  }
+  if (rol === "viajero" && loadingPerfil) {
     return (
       <ThemeProvider>
         <CozySpinner />
@@ -166,50 +125,22 @@ function App() {
     );
   }
 
-  if (!usuario) {
-    return (
-      <ThemeProvider>
-        <Login onLogin={setUsuario} />
-      </ThemeProvider>
-    );
-  }
-
+  // App (layout anterior)
   return (
     <ThemeProvider>
       <div className="app-container">
-        {/* Header con toggle de rol */}
         <Header rol={rol} onToggleRol={handleToggleRol} />
 
         {rol === "conductor" ? (
-          <PerfilConductorV2 viajes={viajes} reservas={reservas} />
+          <ConductorDashboard viajes={viajes} reservas={reservas} />
         ) : rol === "viajero" ? (
-          <div>
-            <PerfilViajeroPage perfilCompleto={perfilCompleto} />
-
-            <div style={{ marginTop: 32 }}>
-              <h3>Buscar viajes</h3>
-              <div
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  padding: "1rem",
-                  borderRadius: "0.5rem",
-                  marginTop: "1rem",
-                }}
-              >
-                <BuscadorViajes
-                  viajes={viajes}
-                  usuario={usuario}
-                  onReservar={reservarViaje}
-                />
-              </div>
-
-              {viajeReservado && (
-                <div style={{ marginTop: 16 }}>
-                  <PagoButton viaje={viajeReservado} usuario={usuario} />
-                </div>
-              )}
-            </div>
-          </div>
+          <ViajeroDashboard
+            usuario={usuario}
+            viajes={[]}                // tu flujo original
+            perfilCompleto={perfilCompleto}
+            viajeReservado={viajeReservado}
+            onReservar={reservarViaje}
+          />
         ) : (
           <VerificacionVehiculosAdmin />
         )}
@@ -217,5 +148,3 @@ function App() {
     </ThemeProvider>
   );
 }
-
-export default App;
