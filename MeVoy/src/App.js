@@ -6,11 +6,9 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-// ✅ CozyGlow
-import CozySpinner from "./components/cozyglow/components/Spinners/CozySpinner/CozySpinner";
+// ✅ Rutas correctas para tus estilos CozyGlow
 import "./styles/cozyglow/cozyglow.css";
 import "./styles/cozyglow/color_themes/mvclassic.css";
-import "./App.css"; // dejalo último
 
 // UI
 import Login from "./components/Login";

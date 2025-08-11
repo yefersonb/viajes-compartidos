@@ -86,61 +86,17 @@ export default function Header({ rol = "viajero", onToggleRol, onLogout }) {
           <span id="header-hola-exclamation">!</span>
         </div>
 
-        {/* Avatar + caret (siempre visible) */}
-        <button
-          ref={btnRef}
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={menuAbierto}
-          onClick={toggleMenu}
-          title="Menú de usuario"
+        <img
+          src={foto}
+          alt="Foto de perfil"
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "0 8px 0 0",
-            borderRadius: 999,
-            border: "1px solid #e6e6e6",
-            background: "#fff",
-            height: 40,
-            cursor: "pointer",
+            height: "100%",
+            borderRadius: "50%",
+            overflow: "hidden",
+            opacity: usuario?.photoURL ? 1 : 0.2,
           }}
-        >
-          <img
-            src={foto}
-            alt="Foto de perfil"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              objectFit: "cover",
-              opacity: usuario?.photoURL ? 1 : 0.2,
-            }}
-          />
-          {/* caret discreto */}
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            style={{
-              opacity: 0.6,
-              transform: menuAbierto ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform .15s ease",
-            }}
-          >
-            <path
-              d="M7 10l5 5 5-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        />
       </div>
-
       <div style={{ display: "flex", alignItems: "center", height: "100%", gap: "0.5rem" }}>
         <button
           type="button"

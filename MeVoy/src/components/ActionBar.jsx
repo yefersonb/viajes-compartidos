@@ -24,7 +24,8 @@ export default function ActionBar({
         display: "flex",
         justifyContent: "flex-end",
         gap: 10,
-        background: "var(--bg)",
+        background: "var(--color-surface)",
+        color: "var(--color-text-on-surface)",
         borderBottom: "1px solid #e2e8f0",
         padding: "1rem 0 0.5rem 0",
         marginBottom: 16,
@@ -35,7 +36,7 @@ export default function ActionBar({
           onClick={onEdit}
           style={{
             padding: "7px 18px",
-            background: "#2563eb",
+            background: "var(--color-primary)",
             color: "#fff",
             border: "none",
             borderRadius: 6,
@@ -54,7 +55,7 @@ export default function ActionBar({
             onClick={onSave}
             style={{
               padding: "7px 18px",
-              background: "#059669",
+              background: "var(--color-success)",
               color: "#fff",
               border: "none",
               borderRadius: 6,
@@ -71,7 +72,7 @@ export default function ActionBar({
             onClick={onCancel}
             style={{
               padding: "7px 18px",
-              background: "#64748b",
+              background: "var(--color-neutral)",
               color: "#fff",
               border: "none",
               borderRadius: 6,
