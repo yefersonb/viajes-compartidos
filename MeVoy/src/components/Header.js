@@ -18,7 +18,7 @@ export default function Header() {
     <header className="header shaded">
       <img src={logo} alt="MeVoy Logo" style={{ height: "100%", opacity: "0.7" }} />
 
-      <div className="button borderless row neutral" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "calc(100% - 2rem)", gap: "0.8rem", height: "100%", padding: "0" }}>
+      <div style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", width: "calc(100% - 2rem)", gap: "0.8rem", height: "100%", padding: "0" }}>
         {/* this id and span can be used to hide the "Hola, " and "!" text via JS — This could be better implemented via CSS-Only tricks! */}
         <div className=""><span id="header-hola" className="">Hola, </span>{nombre}<span id="header-hola-exclamation" className="">!</span></div>
         <img
@@ -33,8 +33,8 @@ export default function Header() {
         />
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", height: "100%" }}>
-        <div className="button borderless row neutral">
+      <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "0.8rem", height: "100%" }}>
+        <div className="row neutral">
           <div className="arrow animated pointing-right"></div>
           <div>Viajante</div>
         </div>

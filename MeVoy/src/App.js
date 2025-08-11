@@ -21,8 +21,10 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 // Importar estilos
 import { ThemeProvider } from "./contexts/ThemeContext"; // adjust path if needed
 import "./App.css";
-import "./styles/cozyglow/color_themes/mvclassic.css";
-import "./styles/cozyglow/cozyglow.css";
+import "./styles/cozyglow/cozyglow.css";                // Import cozyglow base
+import "./styles/cozyglow/primitives.css";              // Import cozyglow color primitives
+// import "./styles/cozyglow/color_themes/mvclassic.css";  // Import cozyglow color theme
+import "./styles/cozyglow/color_themes/natura.css";  // Import cozyglow color theme
 //
 
 /* Componentes de CozyGlow */
