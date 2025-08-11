@@ -15,34 +15,24 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
-
-// Importar estilos
-import { ThemeProvider } from "./contexts/ThemeContext"; // adjust path if needed
+import { ThemeProvider } from "./contexts/ThemeContext";
 import "./App.css";
-import "./styles/cozyglow/color_themes/mvclassic.css";
-import "./styles/cozyglow/cozyglow.css";
-//
 
-/* Componentes de CozyGlow */
+// ✅ Rutas correctas para tus estilos CozyGlow
+import "./styles/cozyglow/cozyglow.css";
+import "./styles/cozyglow/color_themes/mvclassic.css";
+
 import CozySpinner from "./components/cozyglow/components/Spinners/CozySpinner/CozySpinner";
 
-
-// Importar componentes
 import Login from "./components/Login";
-import SeleccionarRol from "./components/SeleccionarRol";
 import PerfilConductorV2 from "./components/PerfilConductorV2Enhanced";
-import VehiculosConductor from "./components/VehiculosConductor";
 import BuscadorViajes from "./components/BuscadorViajes";
 import PerfilViajeroPage from "./components/PerfilViajeroPage";
 import PagoButton from "./components/PagoButton";
 import Header from "./components/Header";
-//import Header from "./Header";
-import ReservasRecibidas from "./components/ReservasRecibidas";
 import VerificacionVehiculosAdmin from "./components/vehicleVerification/VerificacionVehiculosAdmin";
-
-const modalStyles = {}; // Puedes agregar estilos si lo deseas
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -50,10 +40,10 @@ function App() {
   const [rol, setRol] = useState(null);
   const [viajes, setViajes] = useState([]);
   const [reservas, setReservas] = useState({});
-  const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [viajeReservado, setViajeReservado] = useState(null);
 
+  // Auth + rol inicial
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setUsuario(user);
@@ -64,8 +54,17 @@ function App() {
         } else {
           const snap = await getDoc(doc(db, "usuarios", user.uid));
           if (snap.exists()) {
-            setRol(snap.data().rol);
-            localStorage.setItem("rolSeleccionado", snap.data().rol);
+            const rolDb = snap.data().rol || "viajero";
+            setRol(rolDb);
+            localStorage.setItem("rolSeleccionado", rolDb);
+          } else {
+            await setDoc(
+              doc(db, "usuarios", user.uid),
+              { rol: "viajero" },
+              { merge: true }
+            );
+            setRol("viajero");
+            localStorage.setItem("rolSeleccionado", "viajero");
           }
         }
       } else {
@@ -77,7 +76,7 @@ function App() {
     return unsub;
   }, []);
 
-  // Validación de completitud para viajero (más tolerante)
+  // Completar perfil mínimo para viajero
   useEffect(() => {
     if (!usuario || rol !== "viajero") return;
     (async () => {
@@ -101,7 +100,7 @@ function App() {
     })();
   }, [usuario, rol]);
 
-  // Carga viajes y reservas si es conductor
+  // Cargar viajes y reservas si es conductor
   useEffect(() => {
     if (!usuario || rol !== "conductor") return;
     const q = query(collection(db, "viajes"), orderBy("horario", "asc"));
@@ -110,6 +109,7 @@ function App() {
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((v) => v.conductor?.uid === usuario.uid);
       setViajes(misViajes);
+
       const temp = {};
       for (const v of misViajes) {
         const rs = await getDocs(collection(db, "viajes", v.id, "reservas"));
@@ -120,8 +120,24 @@ function App() {
     return () => unsubV();
   }, [usuario, rol]);
 
-  const cerrarSesion = () => signOut(auth);
+  // Toggle de rol (Header)
+  const handleToggleRol = async () => {
+    if (!usuario) return;
+    const nuevoRol = rol === "viajero" ? "conductor" : "viajero";
+    try {
+      await setDoc(
+        doc(db, "usuarios", usuario.uid),
+        { rol: nuevoRol },
+        { merge: true }
+      );
+      localStorage.setItem("rolSeleccionado", nuevoRol);
+      setRol(nuevoRol);
+    } catch (error) {
+      console.error("Error al cambiar el rol:", error);
+    }
+  };
 
+  // Reservar viaje (viajero)
   const reservarViaje = async (id) => {
     try {
       const data = {
@@ -140,70 +156,34 @@ function App() {
     }
   };
 
-  if (loading) return (
-    <ThemeProvider>
+  if (loading) {
+    return (
+      <ThemeProvider>
         <CozySpinner />
-    </ThemeProvider>
-  );
+      </ThemeProvider>
+    );
+  }
 
-  if (!usuario) return (
-    <ThemeProvider>
-      <Login onLogin={setUsuario} />
-    </ThemeProvider>
-  );
+  if (!usuario) {
+    return (
+      <ThemeProvider>
+        <Login onLogin={setUsuario} />
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider>
       <div className="app-container">
-        <Header />
-        <div className="user-header">
-          <p>
-            Hola, {usuario.displayName || usuario.email} ({rol})
-          </p>
-          <div className="user-actions">
-            <button onClick={cerrarSesion} className="link-btn">
-              Cerrar sesión
-            </button>
-            <button
-              onClick={() => setMostrarSelectorRol(true)}
-              className="link-btn"
-            >
-              Cambiar rol
-            </button>
-            {mostrarSelectorRol && (
-              <button
-                className="link-btn"
-                onClick={() => setMostrarSelectorRol(false)}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
-
-        {mostrarSelectorRol && (
-          <div style={modalStyles.overlay}>
-            <div style={modalStyles.content}>
-              <SeleccionarRol
-                usuario={usuario}
-                setRol={(r) => {
-                  setRol(r);
-                  localStorage.setItem("rolSeleccionado", r);
-                  setMostrarSelectorRol(false);
-                }}
-              />
-            </div>
-          </div>
-        )}
+        {/* Header con toggle de rol */}
+        <Header rol={rol} onToggleRol={handleToggleRol} />
 
         {rol === "conductor" ? (
           <PerfilConductorV2 viajes={viajes} reservas={reservas} />
         ) : rol === "viajero" ? (
           <div>
-            {/* Perfil del viajero */}
             <PerfilViajeroPage perfilCompleto={perfilCompleto} />
 
-            {/* Buscador / viajes publicados debajo si querés */}
             <div style={{ marginTop: 32 }}>
               <h3>Buscar viajes</h3>
               <div
@@ -220,6 +200,7 @@ function App() {
                   onReservar={reservarViaje}
                 />
               </div>
+
               {viajeReservado && (
                 <div style={{ marginTop: 16 }}>
                   <PagoButton viaje={viajeReservado} usuario={usuario} />

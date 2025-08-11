@@ -1,4 +1,4 @@
-// src/components/DetalleViaje.jsx
+// src/components/DetalleViaje.js
 import React, { useState, useEffect } from "react";
 import {
   GoogleMap,
@@ -6,7 +6,7 @@ import {
   DirectionsRenderer,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { MAP_LIBS, MAP_LOADER_ID } from "../googleMapsConfig";
+import { MAP_LOADER_OPTIONS } from "../googleMapsConfig";
 import {
   doc,
   getDoc,
@@ -20,6 +20,7 @@ import { useUser } from "../contexts/UserContext";
 import { usePerfilViajeroCompleto } from "../hooks/usePerfilViajeroCompleto";
 import { abreviarUbicacion } from "../utils/ubicacion";
 import "./DetalleViaje.css";
+import SolicitarEnvio from "./SolicitarEnvio"; // opcional, si aún no lo creaste, quitá esta línea y lo relacionado
 
 function haversineKm(a, b) {
   const toRad = (deg) => (deg * Math.PI) / 180;
@@ -41,14 +42,11 @@ export default function DetalleViaje({
   onReservar,
   loading: parentLoading,
 }) {
-  const { isLoaded } = useJsApiLoader({
-    id: MAP_LOADER_ID,
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: MAP_LIBS,
-  });
+const { isLoaded } = useJsApiLoader(MAP_LOADER_OPTIONS);
 
   const { usuario } = useUser();
-  const { perfil, cargando: cargandoPerfil, puedeReservar } = usePerfilViajeroCompleto(usuario?.uid);
+  const { /*perfil,*/ cargando: cargandoPerfil, puedeReservar } =
+    usePerfilViajeroCompleto(usuario?.uid);
 
   const [directions, setDirections] = useState(null);
   const [distanciaKm, setDistanciaKm] = useState(null);
@@ -58,9 +56,9 @@ export default function DetalleViaje({
   const [reputacionCalculada, setReputacionCalculada] = useState(null);
   const [totalOpiniones, setTotalOpiniones] = useState(0);
   const [reservando, setReservando] = useState(false);
-  // toggles
-  const [mostrarConductor, setMostrarConductor] = useState(false);
-  const [mostrarVehiculo, setMostrarVehiculo] = useState(false);
+
+  // NUEVO: modal solicitar envío
+  const [abrirEnvio, setAbrirEnvio] = useState(false);
 
   // cálculo ruta y distancia
   useEffect(() => {
@@ -87,7 +85,7 @@ export default function DetalleViaje({
             if (s2 === "OK" && r2.routes?.length) {
               setDirections(r2);
               setDistanciaKm((r2.routes[0].legs[0].distance.value / 1000).toFixed(1));
-            } else {
+            } else if (origenCoords && destinoCoords) {
               setDistanciaKm(haversineKm(origenCoords, destinoCoords).toFixed(1));
               setRutaError("ℹ️ Ruta aproximada en línea recta.");
             }
@@ -99,7 +97,7 @@ export default function DetalleViaje({
     }
   }, [isLoaded, viaje]);
 
-  // carga datos de conductor y vehículo
+  // datos de conductor y vehículo
   useEffect(() => {
     if (!viaje?.conductor?.uid) return;
     const fetchDatos = async () => {
@@ -138,7 +136,9 @@ export default function DetalleViaje({
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         <span>{"⭐".repeat(llenas)}{mitad ? "✬" : ""}</span>
-        <span style={{ color: "#888", marginLeft: 4, fontSize: 12 }}>{rep.toFixed(1)} · {totalOpiniones}</span>
+        <span style={{ color: "#888", marginLeft: 4, fontSize: 12 }}>
+          {rep.toFixed(1)} · {totalOpiniones}
+        </span>
       </span>
     );
   };
@@ -168,7 +168,7 @@ export default function DetalleViaje({
 
   return (
     <div className="dv-overlay" onClick={onClose}>
-      <div className="dv-modal" onClick={e => e.stopPropagation()}>
+      <div className="dv-modal" onClick={(e) => e.stopPropagation()}>
         <button className="dv-close" onClick={onClose}>×</button>
         <h2>Detalle de Viaje</h2>
 
@@ -187,50 +187,123 @@ export default function DetalleViaje({
           <p><strong>Asientos:</strong> {viaje.asientos}</p>
           {distanciaKm && <p><strong>Distancia:</strong> {distanciaKm} km</p>}
           {distanciaKm && <p><strong>Precio:</strong> ${precio}</p>}
+
+          {/* Badge + info de Paquetes */}
+          {viaje.aceptaPaquetes && (
+            <div
+              style={{
+                marginTop: 8,
+                display: "inline-flex",
+                flexWrap: "wrap",
+                gap: 8,
+                alignItems: "center",
+                background: "#eef2ff",
+                color: "#3730a3",
+                padding: "6px 10px",
+                borderRadius: 999,
+                fontSize: 12,
+              }}
+            >
+              <span>📦 Acepta paquetes</span>
+              <span>• Peso máx: <strong>{viaje.pesoMax ?? "—"}</strong> kg</span>
+              <span>• Volumen máx: <strong>{viaje.volumenMax ?? "—"}</strong> L</span>
+              {viaje.costoBasePaquete != null && (
+                <span>• Desde <strong>${Number(viaje.costoBasePaquete).toLocaleString("es-AR")}</strong></span>
+              )}
+            </div>
+          )}
         </div>
 
         {(datosConductor || vehiculo) && <hr />}
 
-        {/* Conductor como link */}
+        {/* Conductor */}
         {datosConductor && (
           <div className="dv-info">
-            <button onClick={() => setMostrarConductor(!mostrarConductor)} style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", padding: 0 }}>
-              🧑 {datosConductor.nombre || "Conductor"}
-            </button>
-            {mostrarConductor && (
-              <div style={{ marginTop: 8, paddingLeft: 16 }}>
-                {datosConductor.fotoPerfil && <img src={datosConductor.fotoPerfil} alt="Foto del conductor" style={{ width: 50, height: 50 , fontSize: "1.0rem", borderRadius: "50%", objectFit: "cover", marginBottom: 4 }} />}
-                {datosConductor.whatsapp && <p><strong>WhatsApp:</strong> {datosConductor.whatsapp}</p>}
-                {datosConductor.direccion && <p><strong>Dirección:</strong> {datosConductor.direccion}</p>}
-                <p><strong>Reputación:</strong> {reputacionCalculada !== null ? renderEstrellas(reputacionCalculada) : "Sin calificaciones"}</p>
-              </div>
-            )}
+            <p>🧑 {datosConductor.nombre || "Conductor"}</p>
+            {/* toggle local sin estado previo: lo agregamos arriba */}
           </div>
         )}
 
-        {/* Vehículo como link */}
+        {/* Detalle conductor (usamos un mini estado local ad-hoc) */}
+        {datosConductor && (
+          <details style={{ marginTop: 8, paddingLeft: 0 }}>
+            <summary style={{ cursor: "pointer", color: "#2563eb" }}>Ver datos del conductor</summary>
+            <div style={{ marginTop: 8, paddingLeft: 8 }}>
+              {datosConductor.fotoPerfil && (
+                <img
+                  src={datosConductor.fotoPerfil}
+                  alt="Foto del conductor"
+                  style={{ width: 50, height: 50, borderRadius: "50%", objectFit: "cover", marginBottom: 4 }}
+                />
+              )}
+              {datosConductor.whatsapp && <p><strong>WhatsApp:</strong> {datosConductor.whatsapp}</p>}
+              {datosConductor.direccion && <p><strong>Dirección:</strong> {datosConductor.direccion}</p>}
+              <p>
+                <strong>Reputación:</strong>{" "}
+                {reputacionCalculada !== null ? renderEstrellas(reputacionCalculada) : "Sin calificaciones"}
+              </p>
+            </div>
+          </details>
+        )}
+
+        {/* Vehículo */}
         {vehiculo && (
-          <div className="dv-info">
-            <button onClick={() => setMostrarVehiculo(!mostrarVehiculo)} style={{ background: "none", fontSize: "1.0rem",border: "none", color: "#2563eb", cursor: "pointer", padding: 0 }}>
+          <details className="dv-info" style={{ marginTop: 8 }}>
+            <summary style={{ cursor: "pointer", color: "#2563eb" }}>
               🚗 {vehiculo.marca || "Vehículo"} {vehiculo.modelo || ""}
-            </button>
-            {mostrarVehiculo && (
-              <div style={{ marginTop: 8, paddingLeft: 16 }}>
-                {vehiculo.imagenURL && <img src={vehiculo.imagenURL} alt="Foto del vehículo" style={{ width: 80, height: 60, borderRadius: 4, objectFit: "cover", marginBottom: 4 }} />}
-                <p><strong>Año:</strong> {vehiculo.anio || "-"}</p>
-                <p><strong>Patente:</strong> {vehiculo.patente || "-"}</p>
-              </div>
-            )}
-          </div>
+            </summary>
+            <div style={{ marginTop: 8, paddingLeft: 8 }}>
+              {vehiculo.imagenURL && (
+                <img
+                  src={vehiculo.imagenURL}
+                  alt="Foto del vehículo"
+                  style={{ width: 80, height: 60, borderRadius: 4, objectFit: "cover", marginBottom: 4 }}
+                />
+              )}
+              <p><strong>Año:</strong> {vehiculo.anio || "-"}</p>
+              <p><strong>Patente:</strong> {vehiculo.patente || "-"}</p>
+            </div>
+          </details>
         )}
 
         <div className="dv-actions">
           <button onClick={onClose} disabled={parentLoading || reservando}>Volver</button>
-          <button onClick={handleConfirmarReserva} disabled={parentLoading || reservando || viaje.asientos < 1}>
+          <button
+            onClick={handleConfirmarReserva}
+            disabled={parentLoading || reservando || viaje.asientos < 1}
+          >
             {reservando ? "Reservando..." : viaje.asientos > 0 ? "Confirmar Reserva" : "Sin asientos"}
           </button>
+
+          {viaje.aceptaPaquetes && (
+            <button
+              onClick={() => setAbrirEnvio(true)}
+              disabled={parentLoading}
+              style={{
+                padding: "0.5rem 0.75rem",
+                borderRadius: "0.375rem",
+                backgroundColor: "#6366f1",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                marginLeft: 8,
+              }}
+            >
+              Solicitar envío 📦
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Modal solicitar envío */}
+      {abrirEnvio && (
+        <SolicitarEnvio
+          viaje={viaje}
+          usuario={usuario}
+          onClose={() => setAbrirEnvio(false)}
+          onCreated={() => setAbrirEnvio(false)}
+        />
+      )}
     </div>
   );
 }
