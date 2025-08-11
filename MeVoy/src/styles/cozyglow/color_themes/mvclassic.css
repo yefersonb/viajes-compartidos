@@ -1,76 +1,51 @@
 :root {
-  /* === Primitives === */
-  /* Blues (Primary) */
-  --color-blue-50: #f2f6fa;
-  --color-blue-100: #d9e4f4;
-  --color-blue-200: #b3caeb;
-  --color-blue-300: #8daee0;
-  --color-blue-400: #6a93d4; 
-  --color-blue-500: #4a7bd1; 
-  --color-blue-600: #3c66ad; /* Primary */
-  --color-blue-700: #2f5289; 
-  --color-blue-800: #223d64;
-  --color-blue-900: #162a44;
-
-  /* Greens (Secondary) */
-  --color-green-50: #f0faf7;
-  --color-green-100: #d6f1e8;
-  --color-green-200: #aee0d1;
-  --color-green-300: #86cfba;
-  --color-green-400: #63c0a7;
-  --color-green-500: #46b89d; 
-  --color-green-600: #3aa087;
-  --color-green-700: #2e7f6c; /* Secondary */
-  --color-green-800: #225f51;
-  --color-green-900: #153f36;
-
-  /* Neutrals */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
-
-  /* Status */
-  --color-success-500: #4c9d7a;
-  --color-warning-500: #d2a752;
-  --color-danger-500: #c46363;
-  --color-info-500: #5b8fbf;
-
+  /* SEE PRIMITIVES.CSS */
   /* === Light Theme Semantic === */ 
   --color-primary: var(--color-blue-500);
   --color-primary-hover: var(--color-blue-100);
+  --color-on-primary: var(--color-blue-600);
+
   --color-secondary: var(--color-green-500);
   --color-secondary-hover: var(--color-green-100);
+  --color-on-secondary: var(--color-green-600);
 
+  --color-neutral: var(--color-gray-500);
   --color-success: var(--color-success-500);
   --color-warning: var(--color-warning-500);
   --color-danger: var(--color-danger-500);
   --color-info: var(--color-info-500);
 
-  --color-surface: var(--color-gray-50);
-  --color-surface-alt: var(--color-gray-100);
-  --color-surface-hover: var(--color-gray-200);
-  --color-overlay: rgba(0,0,0,0.04);
+  --color-on-neutral: var(--color-gray-900);
+  --color-on-success: var(--color-success-500);
+  --color-on-warning: var(--color-warning-500);
+  --color-on-danger: var(--color-danger-500);
+  --color-on-info: var(--color-info-500);
 
+  --color-surface: var(--color-gray-50);
+  --color-on-surface: var(--color-gray-900);
+
+  --color-surface-alt: var(--color-gray-100);
+  --color-on-surface-alt: var(--color-gray-800);
+
+  --color-surface-hover: var(--color-gray-200);
+  --color-on-surface-hover: var(--color-gray-700);
+  
+  --color-overlay: rgba(0,0,0,0.04);
+ 
+  --color-border: var(--color-gray-300);
+  --color-border-strong: var(--color-gray-500);
+  --color-divider: var(--color-gray-200);
+  
+  --color-focus-ring: var(--color-green-400);
+  --color-selection: var(--color-blue-100);
+
+  /* Backwards compatibility patches */
   --color-text-primary: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
   --color-text-disabled: var(--color-gray-400);
   --color-text-on-primary: #ffffff;
   --color-text-on-secondary: #ffffff;
   --color-text-on-danger: #ffffff;
-
-  --color-border: var(--color-gray-300);
-  --color-border-strong: var(--color-gray-500);
-  --color-divider: var(--color-gray-200);
-
-  --color-focus-ring: var(--color-green-400);
-  --color-selection: var(--color-blue-100);
 }
 
 /* === Dark Theme === */ /* Dark theme is currently not supported */
