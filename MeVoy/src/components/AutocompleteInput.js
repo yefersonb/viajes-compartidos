@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useJsApiLoader } from "@react-google-maps/api";
-import { MAP_LIBS, MAP_LOADER_ID } from "../googleMapsConfig";
+import { MAP_LOADER_OPTIONS } from "../googleMapsConfig";
 
 // simple debounce
 function debounce(fn, delay) {
@@ -18,11 +18,8 @@ export default function AutocompleteInput({
   // opcional: si querés forzar solo selección desde autocomplete
   onlyFromAutocomplete = false,
 }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: MAP_LOADER_ID,
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: MAP_LIBS,
-  });
+
+const { isLoaded, loadError } = useJsApiLoader(MAP_LOADER_OPTIONS);
 
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
@@ -51,10 +48,10 @@ export default function AutocompleteInput({
         inputRef.current,
         {
           types: ["geocode"],
-          componentRestrictions: { country: "ar" },
+          componentRestrictions: { country: "AR" }, // mayúsculas
+          fields: ["formatted_address", "geometry"], // <- acá el cambio
         }
       );
-      autocompleteRef.current.setFields(["formatted_address", "geometry"]);
       autocompleteRef.current.addListener("place_changed", () => {
         const place = autocompleteRef.current.getPlace();
         if (
@@ -79,6 +76,7 @@ export default function AutocompleteInput({
       });
     }
   }, [isLoaded, loadError, onChange]);
+console.log("GMAPS KEY?", process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
 
   // Geocode de texto libre (fallback) si no vino place válido
   const geocodeAddress = useCallback(
@@ -152,7 +150,6 @@ export default function AutocompleteInput({
     }
     // Si está configurado para solo autocomplete, validamos que venga de ahí
     if (onlyFromAutocomplete) {
-      // Intentamos geocodificar igual como ayuda
       const geo = await geocodeAddress(internalValue);
       if (geo) {
         setError("");

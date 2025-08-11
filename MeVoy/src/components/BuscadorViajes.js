@@ -1,32 +1,18 @@
 // src/components/BuscadorViajes.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DetalleViaje from "./DetalleViaje";
 import AutocompleteInput from "./AutocompleteInput";
-import { useUser } from "../contexts/UserContext";
-import { usePerfilViajeroCompleto } from "../hooks/usePerfilViajeroCompleto";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 /**
- * Componente BuscadorViajes
  * Props:
- * - viajes: Array de objetos { id, origen, destino, fecha (ISO), asientos, origenCoords, destinoCoords, horario }
- * - usuario: Objeto usuario con al menos uid, o null si no hay sesión
- * - onReservar: Función (viajeId) => Promise<void> que ejecuta lógica adicional después de crear la reserva
+ * - viajes?: { id, origen, destino, fecha (ISO), asientos, horario, aceptaPaquetes?, pesoMax?, volumenMax?, costoBasePaquete? }[]
+ * - usuario
+ * - onReservar
  */
-export default function BuscadorViajes({ viajes, usuario, onReservar }) {
-  const [origen, setOrigen] = useState("");
-  const [destino, setDestino] = useState("");
-  const [fecha, setFecha] = useState("");
-  const [pasajeros, setPasajeros] = useState(1);
-  const [momento, setMomento] = useState("");
-  const [resultados, setResultados] = useState([]);
-  const [detalle, setDetalle] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const { perfil, cargando: cargandoPerfil, puedeReservar } = usePerfilViajeroCompleto(usuario?.uid);
-
-  // Estilos compartidos
+export default function BuscadorViajes({ viajes = [], usuario, onReservar }) {
+  // ---------- estilos ----------
   const inputStyle = {
     width: "100%",
     padding: "0.5rem",
@@ -43,56 +29,96 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
     fontWeight: 500,
   };
 
-  // Filtrar viajes según criterios
-  const buscar = () => {
-    const dateISO = fecha ? fecha : null;
+  // ---------- buscador viajes ----------
+  const [origen, setOrigen] = useState("");
+  const [destino, setDestino] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [pasajeros, setPasajeros] = useState(1);
+  const [momento, setMomento] = useState("");
+
+  // filtros de paquetes
+  const [soloPaquetes, setSoloPaquetes] = useState(false);
+  const [pesoReq, setPesoReq] = useState("");
+  const [volumenReq, setVolumenReq] = useState("");
+
+  const [resultados, setResultados] = useState([]);
+  const [detalle, setDetalle] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // precargar resultados iniciales
+    setResultados(viajes);
+  }, [viajes]);
+
+  // ---------- filtro de viajes ----------
+  const filtrarCliente = (lista) => {
+    const dateISO = fecha || null;
     const origText = typeof origen === "object" ? origen.formatted_address : origen;
     const destText = typeof destino === "object" ? destino.formatted_address : destino;
-    const filt = viajes.filter((v) => {
-      const matchOrigen = origText
-        ? v.origen.toLowerCase().includes(origText.toLowerCase())
-        : true;
-      const matchDestino = destText
-        ? v.destino.toLowerCase().includes(destText.toLowerCase())
-        : true;
-      const matchFecha = dateISO ? v.fecha.slice(0, 10) === dateISO : true;
-      const matchAsientos = v.asientos >= pasajeros;
+
+    const reqPeso = pesoReq !== "" ? Number(pesoReq) : null;
+    const reqVol = volumenReq !== "" ? Number(volumenReq) : null;
+
+    return (lista || []).filter((v) => {
+      const matchOrigen = origText ? v.origen?.toLowerCase?.().includes(origText.toLowerCase()) : true;
+      const matchDestino = destText ? v.destino?.toLowerCase?.().includes(destText.toLowerCase()) : true;
+      const matchFecha = dateISO ? String(v.fecha).slice(0, 10) === dateISO : true;
+      const matchAsientos = (v.asientos ?? 0) >= pasajeros;
+
       let matchMomento = true;
-      if (momento) {
-        const hour = parseInt(v.horario.slice(11, 13), 10);
+      if (momento && v.horario) {
+        const hour = parseInt(String(v.horario).slice(11, 13), 10);
         if (momento === "manana") matchMomento = hour >= 6 && hour < 12;
         else if (momento === "tarde") matchMomento = hour >= 12 && hour < 18;
         else if (momento === "noche") matchMomento = hour >= 18 || hour < 6;
       }
-      return matchOrigen && matchDestino && matchFecha && matchAsientos && matchMomento;
+
+      const matchSoloPaquetes = !soloPaquetes ? true : !!v.aceptaPaquetes;
+
+      let matchPesoVol = true;
+      if (reqPeso != null || reqVol != null) {
+        if (!v.aceptaPaquetes) {
+          matchPesoVol = false;
+        } else {
+          const pMax = typeof v.pesoMax === "number" ? v.pesoMax : Number(v.pesoMax);
+          const vMax = typeof v.volumenMax === "number" ? v.volumenMax : Number(v.volumenMax);
+          if (reqPeso != null && !(pMax >= reqPeso)) matchPesoVol = false;
+          if (reqVol != null && !(vMax >= reqVol)) matchPesoVol = false;
+        }
+      }
+
+      return (
+        matchOrigen &&
+        matchDestino &&
+        matchFecha &&
+        matchAsientos &&
+        matchMomento &&
+        matchSoloPaquetes &&
+        matchPesoVol
+      );
     });
-    setResultados(filt);
   };
 
-  // Confirmar reserva y guardarla en Firestore
+  const buscar = async () => {
+    setLoading(true);
+    try {
+      setResultados(filtrarCliente(viajes));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const confirmarReserva = async (viajeId) => {
     if (!usuario) {
       alert("Iniciá sesión para reservar");
       return;
     }
-    if (cargandoPerfil) {
-      alert("Esperá a que se cargue tu perfil");
+    if (viajeId == null) {
+      alert("Error interno: viaje desconocido.");
       return;
     }
-    if (!puedeReservar) {
-      alert("Tenés que completar tu perfil antes de reservar. Nombre, WhatsApp y dirección son obligatorios.");
-      window.location.href = "/perfil-viajero";
-      return;
-    }
-    if (typeof viajeId === "undefined" || viajeId === null) {
-      console.error("Falta el viajeId para reservar");
-      alert("Error interno: no se pudo identificar el viaje.");
-      return;
-    }
-
     setLoading(true);
     try {
-      // Crear la reserva en Firestore dentro de /viajes/{viajeId}/reservas
       const reservasCol = collection(db, "viajes", viajeId, "reservas");
       await addDoc(reservasCol, {
         viajanteUid: usuario.uid,
@@ -101,22 +127,13 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
         estadoReserva: "pendiente",
         creadoPor: usuario.uid,
       });
-
-      // Lógica adicional si te pasaron callback
-      if (typeof onReservar === "function") {
-        await onReservar(viajeId);
-      }
-
+      if (typeof onReservar === "function") await onReservar(viajeId);
       alert("¡Reserva creada! Esperando aprobación del conductor.");
       setDetalle(null);
-      buscar(); // refresca resultados en caso de cambios en asientos
+      buscar();
     } catch (err) {
       console.error("Error creando reserva:", err);
-      if (err.code === "permission-denied") {
-        alert("No tenés permiso para reservar. Revisá las reglas de Firestore.");
-      } else {
-        alert("Hubo un problema al reservar.");
-      }
+      alert("Hubo un problema al reservar.");
     } finally {
       setLoading(false);
     }
@@ -144,57 +161,35 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
           textAlign: "center",
         }}
       >
-        Buscar Viajes
+        Buscar viajes
       </h3>
 
-      {!puedeReservar && !cargandoPerfil && (
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
-          <p style={{ margin: 0 }}>
-            Antes de reservar tenés que completar tu perfil: nombre, WhatsApp y dirección.{" "}
-            <a href="/perfil-viajero" className="underline font-semibold">
-              Completar perfil
-            </a>
-          </p>
-        </div>
-      )}
-
+      {/* ----- BUSCADOR DE VIAJES ----- */}
       <div style={{ margin: "0.5rem 0" }}>
-        <label htmlFor="origen" style={labelStyle}>
-          Origen
-        </label>
+        <label htmlFor="origen" style={labelStyle}>Origen</label>
         <AutocompleteInput
           id="origen"
           placeholder="Ingresa origen"
           value={typeof origen === "object" ? origen.formatted_address : origen}
           onChange={setOrigen}
-          style={inputStyle}
         />
       </div>
-
       <div style={{ margin: "0.5rem 0" }}>
-        <label htmlFor="destino" style={labelStyle}>
-          Destino
-        </label>
+        <label htmlFor="destino" style={labelStyle}>Destino</label>
         <AutocompleteInput
           id="destino"
           placeholder="Ingresa destino"
           value={typeof destino === "object" ? destino.formatted_address : destino}
           onChange={setDestino}
-          style={inputStyle}
         />
       </div>
 
       <div style={{ margin: "0.5rem 0" }}>
-        <label htmlFor="fecha" style={labelStyle}>
-          Fecha
-        </label>
+        <label htmlFor="fecha" style={labelStyle}>Fecha</label>
         <input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} style={inputStyle} />
       </div>
-
       <div style={{ margin: "0.5rem 0" }}>
-        <label htmlFor="momento" style={labelStyle}>
-          Momento del día
-        </label>
+        <label htmlFor="momento" style={labelStyle}>Momento del día</label>
         <select id="momento" value={momento} onChange={(e) => setMomento(e.target.value)} style={inputStyle}>
           <option value="">Cualquiera</option>
           <option value="manana">Mañana (06–12)</option>
@@ -202,22 +197,49 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
           <option value="noche">Noche (18–06)</option>
         </select>
       </div>
-
       <div style={{ margin: "0.5rem 0" }}>
-        <label htmlFor="pasajeros" style={labelStyle}>
-          Pasajeros
-        </label>
+        <label htmlFor="pasajeros" style={labelStyle}>Pasajeros</label>
         <select id="pasajeros" value={pasajeros} onChange={(e) => setPasajeros(Number(e.target.value))} style={inputStyle}>
           {[...Array(6)].map((_, i) => (
             <option key={i + 1} value={i + 1}>
-              {i + 1} pasajero{ i > 0 && "s" }
+              {i + 1} pasajero{i > 0 ? "s" : ""}
             </option>
           ))}
         </select>
       </div>
 
+      {/* Paquetes: solo muestra campos extra cuando está activo */}
+      <div style={{ margin: "1rem 0", padding: "12px", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <input type="checkbox" checked={soloPaquetes} onChange={(e) => setSoloPaquetes(e.target.checked)} />
+          <span style={{ fontWeight: 600 }}>Solo viajes que aceptan paquetes</span>
+        </label>
+
+        {soloPaquetes && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginTop: 12 }}>
+            <div>
+              <label style={labelStyle}>Peso a enviar (kg) — opcional</label>
+              <input
+                type="number" min={0} step="0.1" value={pesoReq}
+                onChange={(e) => setPesoReq(e.target.value)}
+                placeholder="Ej: 3" style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Volumen (L) — opcional</label>
+              <input
+                type="number" min={0} step="0.1" value={volumenReq}
+                onChange={(e) => setVolumenReq(e.target.value)}
+                placeholder="Ej: 15" style={inputStyle}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <button
         onClick={buscar}
+        disabled={loading}
         style={{
           backgroundColor: "#2563eb",
           color: "white",
@@ -226,16 +248,19 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
           borderRadius: "0.375rem",
           fontFamily: "inherit",
           width: "100%",
-          cursor: "pointer",
+          cursor: loading ? "not-allowed" : "pointer",
           marginBottom: "1rem",
+          opacity: loading ? 0.7 : 1,
         }}
       >
-        Buscar
+        {loading ? "Buscando…" : "Buscar"}
       </button>
 
       <div style={{ marginTop: "1.5rem" }}>
         {resultados.length === 0 ? (
-          <p style={{ color: "#4b5563" }}>No hay viajes disponibles.</p>
+          <p style={{ color: "#4b5563" }}>
+            {loading ? "Cargando resultados…" : `No hay viajes disponibles${soloPaquetes ? " que acepten paquetes" : ""}.`}
+          </p>
         ) : (
           resultados.map((v) => (
             <div
@@ -253,7 +278,22 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
               </p>
               <p style={{ fontSize: "0.875rem" }}>{new Date(v.fecha).toLocaleString()}</p>
               <p style={{ fontSize: "0.875rem" }}>Asientos: {v.asientos}</p>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+
+              {v.aceptaPaquetes && (
+                <div style={{
+                  marginTop: 8, fontSize: 12, display: "inline-flex", gap: 8, alignItems: "center",
+                  background: "#eef2ff", color: "#3730a3", padding: "6px 10px", borderRadius: 999
+                }}>
+                  <span>📦 Acepta paquetes</span>
+                  <span>• Peso máx: <strong>{v.pesoMax ?? "—"}</strong> kg</span>
+                  <span>• Volumen máx: <strong>{v.volumenMax ?? "—"}</strong> L</span>
+                  {v.costoBasePaquete != null && (
+                    <span>• Desde <strong>${Number(v.costoBasePaquete).toLocaleString("es-AR")}</strong></span>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
                 <button
                   onClick={() => setDetalle(v)}
                   style={{
@@ -269,14 +309,14 @@ export default function BuscadorViajes({ viajes, usuario, onReservar }) {
                 </button>
                 <button
                   onClick={() => confirmarReserva(v.id)}
-                  disabled={!puedeReservar || cargandoPerfil}
+                  disabled={loading}
                   style={{
                     padding: "0.5rem 0.75rem",
                     borderRadius: "0.375rem",
-                    backgroundColor: !puedeReservar || cargandoPerfil ? "#a5d1c2" : "#10b981",
+                    backgroundColor: loading ? "#a5d1c2" : "#10b981",
                     color: "white",
                     border: "none",
-                    cursor: !puedeReservar || cargandoPerfil ? "not-allowed" : "pointer",
+                    cursor: loading ? "not-allowed" : "pointer",
                   }}
                 >
                   Reservar
