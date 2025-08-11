@@ -1,3 +1,4 @@
+// src/components/PerfilConductorV2Enhanced.jsx
 import React, { useState, useEffect } from "react";
 import { useUser } from "../contexts/UserContext";
 import { usePerfilData } from "../hooks/usePerfilData";
@@ -10,7 +11,12 @@ import ViajesSection from "./ViajesSection";
 import VehiculosConductor from "./VehiculosConductor";
 import NuevoViaje from "./NuevoViaje";
 
-const menuItems = ["Perfil", "Vehículos", "Reservas", "Nuevo Viaje"];
+// 👇 NUEVO
+import EnviosDelViaje from "./EnviosDelViaje";
+import EnviosDisponibles from "./EnviosDisponibles";
+
+// 👇 NUEVO: agregamos "Envíos"
+const menuItems = ["Perfil", "Vehículos", "Reservas", "Envíos", "Nuevo Viaje"];
 
 export default function PerfilConductorV2Enhanced({
   viajes: viajesProp,
@@ -121,9 +127,7 @@ export default function PerfilConductorV2Enhanced({
                 </span>
                 Mis Vehículos
               </h1>
-              <p className="text-blue-100 mt-1">
-                Gestiona tus vehículos registrados
-              </p>
+              <p className="text-blue-100 mt-1">Gestiona tus vehículos registrados</p>
             </div>
             <div className="p-6">
               <VehiculosConductor viajes={viajesProp} reservas={reservasProp} />
@@ -143,14 +147,68 @@ export default function PerfilConductorV2Enhanced({
           />
         );
 
+      // 👇 Envíos para el CONDUCTOR (agregamos “disponibles” sin romper nada)
+      case "Envíos":
+        return (
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden section-card">
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+                <span className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm">
+                  📦
+                </span>
+                Envíos de Paquetes
+              </h1>
+              <p className="text-indigo-100 mt-1">
+                Aceptá solicitudes, iniciá retiros y confirmá entregas con PIN.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Bloque 1: Envíos disponibles para aceptar */}
+              <div className="p-4 rounded border bg-white">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold">Envíos disponibles</h3>
+                  <span className="text-xs text-gray-500">Conductor</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Mirá los envíos públicos y aceptá los que te sirvan.
+                </p>
+                <div className="mt-3">
+                  <EnviosDisponibles />
+                </div>
+              </div>
+
+              {/* Bloque 2: Envíos vinculados a tus viajes (lo que ya tenías) */}
+              <div className="p-4 rounded border bg-white">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold">Vinculados a tus viajes</h3>
+                  <button
+                    type="button"
+                    onClick={loadViajesYReservas}
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
+                    Refrescar
+                  </button>
+                </div>
+
+                <div className="mt-3">
+                  <EnviosDelViaje
+                    conductorId={usuario?.uid}
+                    viajesPublicados={viajesPublicados}
+                    onRefrescar={loadViajesYReservas}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+
       case "Nuevo Viaje":
         return (
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden section-card">
             <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
               <p className="text-green-100 mt-1 font-bold">
-                <strong>
-                  Publica tu próximo viaje y encuentra pasajeros
-                </strong>
+                <strong>Publica tu próximo viaje y encuentra pasajeros</strong>
               </p>
             </div>
             <div className="p-6">
@@ -181,10 +239,10 @@ export default function PerfilConductorV2Enhanced({
       {/* Contenido principal */}
       <main
         className={`
-        max-w-4xl mx-auto py-8 
-        ${isMobile ? "px-4" : "px-6"} 
-        transition-all duration-300 ease-in-out
-      `}
+          max-w-4xl mx-auto py-8 
+          ${isMobile ? "px-4" : "px-6"} 
+          transition-all duration-300 ease-in-out
+        `}
       >
         {/* Breadcrumb */}
         <nav className="mb-6">
