@@ -20,9 +20,11 @@ import { onAuthStateChanged } from "firebase/auth";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./App.css";
 
-// ✅ Rutas correctas para tus estilos CozyGlow
-import "./styles/cozyglow/cozyglow.css";
-import "./styles/cozyglow/color_themes/mvclassic.css";
+import "./styles/cozyglow/cozyglow.css";                // Import cozyglow base
+import "./styles/cozyglow/primitives.css";              // Import cozyglow color primitives
+// import "./styles/cozyglow/color_themes/mvclassic.css";  // Import cozyglow color theme
+import "./styles/cozyglow/color_themes/natura.css";  // Import cozyglow color theme
+//
 
 import CozySpinner from "./components/cozyglow/components/Spinners/CozySpinner/CozySpinner";
 

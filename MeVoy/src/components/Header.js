@@ -44,6 +44,9 @@ export default function Header({ rol = "viajero", onToggleRol, onLogout }) {
           <span id="header-hola-exclamation">!</span>
         </div>
 
+      <div style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", width: "calc(100% - 2rem)", gap: "0.8rem", height: "100%", padding: "0" }}>
+        {/* this id and span can be used to hide the "Hola, " and "!" text via JS — This could be better implemented via CSS-Only tricks! */}
+        <div className=""><span id="header-hola" className="">Hola, </span>{nombre}<span id="header-hola-exclamation" className="">!</span></div>
         <img
           src={foto}
           alt="Foto de perfil"
@@ -55,7 +58,6 @@ export default function Header({ rol = "viajero", onToggleRol, onLogout }) {
           }}
         />
       </div>
-
       <div style={{ display: "flex", alignItems: "center", height: "100%", gap: "0.5rem" }}>
         <button
           type="button"
